@@ -461,14 +461,18 @@ function ChartCard({ title, data, variant, color, palette, offset = 0 }) {
                 innerRadius={60}
                 outerRadius={80} 
                 paddingAngle={5}
-                label={{ fill: 'var(--color-ink)', fontSize: 11 }}
+                label={{ 
+                  fill: 'var(--color-ink-secondary)', 
+                  fontSize: 10,
+                  fontWeight: 600
+                }}
               >
                 {data.map((_, i) => (
                   <Cell 
                     key={`cell-${i}`} 
                     fill={(palette || CHART_PALETTE)[(i + offset) % (palette || CHART_PALETTE).length]} 
                     stroke="var(--color-surface)"
-                    strokeWidth={2}
+                    strokeWidth={3}
                   />
                 ))}
               </Pie>
@@ -477,46 +481,65 @@ function ChartCard({ title, data, variant, color, palette, offset = 0 }) {
                   backgroundColor: 'var(--color-surface)', 
                   borderColor: 'var(--color-edge)',
                   color: 'var(--color-ink)',
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   fontSize: '12px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  fontWeight: 600,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  border: '1px solid var(--color-edge-strong)'
                 }}
               />
-              <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '11px', color: 'var(--color-ink)' }} />
+              <Legend 
+                wrapperStyle={{ 
+                  paddingTop: '20px', 
+                  fontSize: '11px', 
+                  fontWeight: 500,
+                  color: 'var(--color-ink-secondary)' 
+                }} 
+              />
             </PieChart>
           </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <BarChart data={data} margin={{ top: 10, right: 10, left: -10, bottom: 20 }}>
               <XAxis 
                 dataKey="name" 
                 stroke="var(--color-ink-tertiary)" 
-                fontSize={11}
+                fontSize={10}
+                fontWeight={600}
                 tick={{ fill: 'var(--color-ink-secondary)' }}
-                axisLine={{ stroke: 'var(--color-edge)' }}
+                axisLine={{ stroke: 'var(--color-edge)', strokeWidth: 1 }}
+                tickLine={{ stroke: 'var(--color-edge)' }}
+                interval={0}
+                angle={-15}
+                textAnchor="end"
               />
               <YAxis 
                 stroke="var(--color-ink-tertiary)" 
-                fontSize={11}
+                fontSize={10}
+                fontWeight={600}
                 tick={{ fill: 'var(--color-ink-secondary)' }}
-                axisLine={{ stroke: 'var(--color-edge)' }}
+                axisLine={{ stroke: 'var(--color-edge)', strokeWidth: 1 }}
+                tickLine={{ stroke: 'var(--color-edge)' }}
               />
               <Tooltip 
+                cursor={{ fill: 'var(--color-brand)', opacity: 0.05 }}
                 contentStyle={{ 
                   backgroundColor: 'var(--color-surface)', 
                   borderColor: 'var(--color-edge)',
                   color: 'var(--color-ink)',
-                  borderRadius: '8px',
+                  borderRadius: '12px',
                   fontSize: '12px',
-                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                  fontWeight: 600,
+                  boxShadow: '0 8px 24px rgba(0,0,0,0.15)',
+                  border: '1px solid var(--color-edge-strong)'
                 }}
                 itemStyle={{ color: 'var(--color-ink)' }}
               />
               <Bar 
                 dataKey="value" 
                 fill={color || 'var(--color-brand)'} 
-                radius={[6, 6, 0, 0]} 
-                barSize={32}
+                radius={[4, 4, 0, 0]} 
+                barSize={40}
               />
             </BarChart>
           </ResponsiveContainer>
