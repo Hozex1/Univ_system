@@ -66,7 +66,7 @@ export default function DashboardCharts({ data }) {
     value: pfeStatusCount[key]
   }));
 
-  const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#8b5cf6', '#ef4444'];
+  const COLORS = ['var(--color-brand)', 'var(--color-success)', 'var(--color-warning)', 'var(--color-brand-dark)', 'var(--color-danger)'];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
@@ -84,13 +84,26 @@ export default function DashboardCharts({ data }) {
                 margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
               >
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--color-edge)" className="dark:stroke-edge" />
-                <XAxis dataKey="name" tick={{fill: 'var(--color-ink-muted)'}} axisLine={{stroke: 'var(--color-edge-subtle)'}} />
-                <YAxis allowDecimals={false} tick={{fill: 'var(--color-ink-muted)'}} axisLine={{stroke: 'var(--color-edge-subtle)'}} />
+                <XAxis dataKey="name" tick={{fill: 'var(--color-ink-secondary)'}} axisLine={{stroke: 'var(--color-edge)'}} />
+                <YAxis allowDecimals={false} tick={{fill: 'var(--color-ink-secondary)'}} axisLine={{stroke: 'var(--color-edge)'}} />
                 <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} 
-                  cursor={{fill: 'var(--color-surface-200)', className: 'dark:fill-surface-300'}}
+                  contentStyle={{ 
+                    backgroundColor: 'var(--color-surface)', 
+                    borderColor: 'var(--color-edge)',
+                    color: 'var(--color-ink)',
+                    borderRadius: '8px', 
+                    border: '1px solid var(--color-edge)', 
+                    boxShadow: 'var(--shadow-soft)' 
+                  }} 
+                  itemStyle={{ color: 'var(--color-ink)' }}
+                  cursor={{ fill: 'var(--color-surface-200)' }}
                 />
-                <Bar dataKey="value" fill="var(--color-brand)" radius={[4, 4, 0, 0]} barSize={40} />
+                <Bar 
+                  dataKey="value" 
+                  fill="var(--color-brand)" 
+                  radius={[8, 8, 0, 0]} 
+                  barSize={36} 
+                />
               </BarChart>
             </ResponsiveContainer>
           ) : null}
@@ -116,13 +129,31 @@ export default function DashboardCharts({ data }) {
                   dataKey="value"
                 >
                   {pfeChartData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    <Cell 
+                      key={`cell-${index}`} 
+                      fill={COLORS[index % COLORS.length]} 
+                      stroke="var(--color-surface)"
+                      strokeWidth={2}
+                    />
                   ))}
                 </Pie>
                 <Tooltip 
-                  contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                  contentStyle={{ 
+                    backgroundColor: 'var(--color-surface)', 
+                    borderColor: 'var(--color-edge)',
+                    color: 'var(--color-ink)',
+                    borderRadius: '8px', 
+                    border: '1px solid var(--color-edge)', 
+                    boxShadow: 'var(--shadow-soft)' 
+                  }}
+                  itemStyle={{ color: 'var(--color-ink)' }}
                 />
-                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                <Legend 
+                  verticalAlign="bottom" 
+                  height={36} 
+                  iconType="circle" 
+                  wrapperStyle={{ color: 'var(--color-ink)', fontSize: '12px' }}
+                />
               </PieChart>
             </ResponsiveContainer>
           ) : null}

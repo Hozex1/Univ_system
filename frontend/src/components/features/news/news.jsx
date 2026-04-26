@@ -4,9 +4,15 @@ import request, { resolveMediaUrl } from '../../../services/api';
 
 const VIDEO_EXTENSIONS = /\.(mp4|webm|ogg|ogv|mov|mkv|avi)(\?.*)?$/i;
 const VIDEO_MIME_PREFIX = /^video\//i;
+const IMAGE_EXTENSIONS = /\.(jpg|jpeg|png|gif|webp|svg)(\?.*)?$/i;
+const IMAGE_MIME_PREFIX = /^image\//i;
 
 function isVideoFile(url = '', mimeType = '') {
   return VIDEO_MIME_PREFIX.test(mimeType) || VIDEO_EXTENSIONS.test(url);
+}
+
+function isImageFile(url = '', mimeType = '') {
+  return IMAGE_MIME_PREFIX.test(mimeType) || IMAGE_EXTENSIONS.test(url);
 }
 
 // Bounce animation style
@@ -207,16 +213,16 @@ function UrgentAnnouncementsCarousel({ items }) {
             width: '44px',
             height: '44px',
             borderRadius: '50%',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid var(--color-edge)',
+            background: 'var(--color-surface-100)',
             backdropFilter: 'blur(12px)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
+            color: 'var(--color-ink)',
             transition: 'all 150ms ease-out',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
             padding: 0,
             flexShrink: 0,
           }}
@@ -224,13 +230,13 @@ function UrgentAnnouncementsCarousel({ items }) {
             e.currentTarget.style.borderColor = 'var(--color-brand)';
             e.currentTarget.style.background = 'var(--color-brand)';
             e.currentTarget.style.color = 'white';
-            e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 0, 0, 0.2)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(var(--color-brand-rgb, 0, 0, 0), 0.3)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.color = 'white';
-            e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)';
+            e.currentTarget.style.borderColor = 'var(--color-edge)';
+            e.currentTarget.style.background = 'var(--color-surface-100)';
+            e.currentTarget.style.color = 'var(--color-ink)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
           }}
           aria-label="Previous announcement"
         >
@@ -300,8 +306,11 @@ function UrgentAnnouncementsCarousel({ items }) {
               style={{
                 position: 'relative',
                 zIndex: 2,
-                padding: '32px',
-                paddingLeft: '40px',
+                padding: '32px 40px',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                minHeight: '280px', // Match card minHeight
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
@@ -311,14 +320,11 @@ function UrgentAnnouncementsCarousel({ items }) {
                     alignItems: 'center',
                     gap: '4px',
                     borderRadius: '6px',
-                    border: '1px solid var(--status-error, #dc2626)',
+                    border: '1px solid rgba(220, 38, 38, 0.2)',
                     background: 'rgba(220, 38, 38, 0.1)',
-                    paddingLeft: '8px',
-                    paddingRight: '8px',
-                    paddingTop: '4px',
-                    paddingBottom: '4px',
+                    padding: '4px 8px',
                     fontSize: '11px',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     letterSpacing: '0.05em',
                     textTransform: 'uppercase',
                     color: 'var(--status-error, #dc2626)',
@@ -332,16 +338,12 @@ function UrgentAnnouncementsCarousel({ items }) {
               </div>
 
               <h2 style={{ 
-                fontSize: '24px', 
+                fontSize: '28px', 
                 fontWeight: 800,
                 letterSpacing: '-0.02em',
                 color: 'var(--color-ink)',
                 marginBottom: '12px',
-                lineHeight: 1.3,
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
+                lineHeight: 1.2,
               }}>
                 {getTitle(current)}
               </h2>
@@ -350,6 +352,7 @@ function UrgentAnnouncementsCarousel({ items }) {
                 fontSize: '13px', 
                 color: 'var(--color-ink-secondary)',
                 marginBottom: '16px',
+                fontWeight: 500,
               }}>
                 {getCategoryName(current)} • {formatDate(current?.datePublication || current?.createdAt)}
               </p>
@@ -359,41 +362,46 @@ function UrgentAnnouncementsCarousel({ items }) {
                 color: 'var(--color-ink-secondary)',
                 marginBottom: '20px',
                 lineHeight: 1.6,
-                display: '-webkit-box',
-                WebkitLineClamp: 3,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
+                maxWidth: '800px',
               }}>
                 {getContent(current)}
               </p>
 
-              <a 
-                href={`/news#${current.id}`} 
-                style={{
-                  display: 'inline-flex',
-                  alignItems: 'center',
-                  gap: '6px',
-                  fontSize: '14px',
-                  fontWeight: 600,
-                  color: 'var(--color-brand)',
-                  textDecoration: 'none',
-                  transition: 'all 200ms ease-out',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.color = 'var(--color-brand-hover)';
-                  e.currentTarget.style.transform = 'translateX(4px)';
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.color = 'var(--color-brand)';
-                  e.currentTarget.style.transform = 'translateX(0)';
-                }}
-              >
-                Read more 
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M5 12h14M12 5l7 7-7 7"/>
-                </svg>
-              </a>
+              {/* Attachment Indicator for Carousel */}
+              {(current?.attachment || current?.videoUrl) && (
+                <div 
+                  style={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: '6px', 
+                    padding: '6px 12px',
+                    borderRadius: '8px',
+                    background: 'var(--color-surface-100)',
+                    border: '1px solid var(--color-edge)',
+                    width: 'fit-content',
+                    marginTop: '8px'
+                  }}
+                >
+                  {isVideoFile(current?.attachment?.url || current?.videoUrl) ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3.5v8z"/>
+                      <path d="M11 11l5 5"/><path d="M16 11l-5 5"/>
+                    </svg>
+                  ) : isImageFile(current?.attachment?.url) ? (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                  ) : (
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                    </svg>
+                  )}
+                  <span style={{ fontSize: '11px', fontWeight: 700, color: 'var(--color-brand)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    {isVideoFile(current?.attachment?.url || current?.videoUrl) ? "Video Attached" : isImageFile(current?.attachment?.url) ? "Image Attached" : "File Attached"}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -410,16 +418,16 @@ function UrgentAnnouncementsCarousel({ items }) {
             width: '44px',
             height: '44px',
             borderRadius: '50%',
-            border: '1px solid rgba(255, 255, 255, 0.3)',
-            background: 'rgba(255, 255, 255, 0.1)',
+            border: '1px solid var(--color-edge)',
+            background: 'var(--color-surface-100)',
             backdropFilter: 'blur(12px)',
             cursor: 'pointer',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: 'white',
+            color: 'var(--color-ink)',
             transition: 'all 150ms ease-out',
-            boxShadow: '0 4px 16px rgba(0, 0, 0, 0.1)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
             padding: 0,
             flexShrink: 0,
           }}
@@ -427,13 +435,13 @@ function UrgentAnnouncementsCarousel({ items }) {
             e.currentTarget.style.borderColor = 'var(--color-brand)';
             e.currentTarget.style.background = 'var(--color-brand)';
             e.currentTarget.style.color = 'white';
-            e.currentTarget.style.boxShadow = '0 6px 24px rgba(0, 0, 0, 0.2)';
+            e.currentTarget.style.boxShadow = '0 6px 20px rgba(var(--color-brand-rgb, 0, 0, 0), 0.3)';
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.3)';
-            e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)';
-            e.currentTarget.style.color = 'white';
-            e.currentTarget.style.boxShadow = '0 4px 16px rgba(0, 0, 0, 0.1)';
+            e.currentTarget.style.borderColor = 'var(--color-edge)';
+            e.currentTarget.style.background = 'var(--color-surface-100)';
+            e.currentTarget.style.color = 'var(--color-ink)';
+            e.currentTarget.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.05)';
           }}
           aria-label="Next announcement"
         >
@@ -630,46 +638,43 @@ function AnnouncementRow({ item, isAdmin, onEdit, onDelete, openMenuId, setOpenM
               {getContent(item)}
             </p>
 
-            {/* Attachment */}
+            {/* Attachment Indicator (Subtle) */}
             {attachmentUrl && (
-              isVideoFile(attachmentUrl, attachment?.mimeType) ? (
-                <video
-                  controls
-                  style={{ width: '100%', maxHeight: '180px', borderRadius: '6px', marginTop: '6px', background: '#000' }}
-                  preload="metadata"
-                >
-                  <source src={attachmentUrl} />
-                </video>
-              ) : (
-                <a
-                  href={attachmentUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '12px',
-                    fontWeight: 500,
-                    color: 'var(--color-brand)',
-                    textDecoration: 'none',
-                    marginTop: '4px',
-                    transition: 'all 150ms ease-out',
-                    width: 'fit-content',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.color = 'var(--color-brand-hover)';
-                    e.currentTarget.style.textDecoration = 'underline';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.color = 'var(--color-brand)';
-                    e.currentTarget.style.textDecoration = 'none';
-                  }}
-                >
-                  <IconFile />
-                  {attachment?.nomDocument || 'View Attachment'}
-                </a>
-              )
+              <div 
+                style={{ 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  gap: '6px', 
+                  marginTop: '10px',
+                  padding: '6px 10px',
+                  borderRadius: '6px',
+                  background: 'var(--color-surface-100)',
+                  border: '1px solid var(--color-edge-subtle)',
+                  width: 'fit-content'
+                }}
+                title={isVideoFile(attachmentUrl, attachment?.mimeType) ? "Video attachment available" : "Document attachment available"}
+              >
+                {isVideoFile(attachmentUrl, attachment?.mimeType) ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 1 1-7.6-11.7 8.38 8.38 0 0 1 3.8.9L21 3.5v8z"/>
+                    <path d="M11 11l5 5"/>
+                    <path d="M16 11l-5 5"/>
+                  </svg>
+                ) : isImageFile(attachmentUrl, attachment?.mimeType) ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+                    <circle cx="8.5" cy="8.5" r="1.5"/>
+                    <polyline points="21 15 16 10 5 21"/>
+                  </svg>
+                ) : (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--color-brand)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/>
+                  </svg>
+                )}
+                <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-brand)', textTransform: 'uppercase', letterSpacing: '0.02em' }}>
+                  {isVideoFile(attachmentUrl, attachment?.mimeType) ? "Video Attached" : isImageFile(attachmentUrl, attachment?.mimeType) ? "Image Attached" : "File Attached"}
+                </span>
+              </div>
             )}
           </div>
 
@@ -1112,13 +1117,10 @@ export default function News() {
       <div
         ref={filterRef}
         style={{
-          position: 'sticky',
-          top: 0,
-          zIndex: 40,
+          position: 'relative',
           background: 'var(--color-canvas)',
-          borderBottom: '1px solid var(--color-edge-subtle)',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
-          backdropFilter: 'blur(4px)',
+          borderBottom: '1px solid var(--color-edge)',
+          paddingBottom: '8px',
         }}
       >
         <div style={{
@@ -1285,16 +1287,13 @@ export default function News() {
                                 style={{
                                   display: 'inline-flex',
                                   alignItems: 'center',
-                                  borderRadius: '4px',
-                                  border: '1px solid var(--color-edge)',
-                                  background: 'var(--color-canvas)',
-                                  paddingLeft: '8px',
-                                  paddingRight: '8px',
-                                  paddingTop: '4px',
-                                  paddingBottom: '4px',
+                                  borderRadius: '6px',
+                                  border: '1px solid var(--color-brand-light)',
+                                  background: 'var(--color-brand-light)',
+                                  padding: '4px 10px',
                                   fontSize: '11px',
-                                  fontWeight: 600,
-                                  letterSpacing: '0.08em',
+                                  fontWeight: 700,
+                                  letterSpacing: '0.05em',
                                   textTransform: 'uppercase',
                                   color: 'var(--color-brand)',
                                 }}
@@ -1308,7 +1307,22 @@ export default function News() {
                                 By {`${item?.auteur?.prenom || ''} ${item?.auteur?.nom || ''}`.trim() || 'Unknown'}
                               </span>
                               {isImportantAnnouncement(item) && (
-                                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', fontSize: '12px', fontWeight: 600, color: 'var(--status-error, #dc2626)' }}>
+                                <span 
+                                  style={{ 
+                                    display: 'inline-flex', 
+                                    alignItems: 'center', 
+                                    gap: '6px', 
+                                    fontSize: '11px', 
+                                    fontWeight: 700, 
+                                    color: 'var(--status-error, #dc2626)',
+                                    background: 'rgba(220, 38, 38, 0.1)',
+                                    border: '1px solid rgba(220, 38, 38, 0.2)',
+                                    padding: '4px 10px',
+                                    borderRadius: '6px',
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.05em',
+                                  }}
+                                >
                                   <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/>
                                   </svg>
@@ -1386,14 +1400,55 @@ export default function News() {
                                           {doc.nomDocument}
                                         </p>
                                       )}
-                                      <video
-                                        controls
-                                        style={{ width: '100%', borderRadius: '8px', background: '#000', display: 'block' }}
-                                        preload="metadata"
+                                      <div 
+                                        style={{ 
+                                          maxWidth: '600px', 
+                                          margin: '0 auto', 
+                                          overflow: 'hidden', 
+                                          borderRadius: '12px', 
+                                          boxShadow: '0 12px 40px rgba(0,0,0,0.3)',
+                                          background: '#000',
+                                          border: '1px solid rgba(255,255,255,0.1)'
+                                        }}
                                       >
-                                        <source src={docUrl} />
-                                        Your browser does not support the video tag.
-                                      </video>
+                                        <video
+                                          controls
+                                          style={{ width: '100%', display: 'block', maxHeight: '70vh' }}
+                                          preload="metadata"
+                                        >
+                                          <source src={docUrl} />
+                                          Your browser does not support the video tag.
+                                        </video>
+                                      </div>
+                                    </div>
+                                  );
+                                }
+
+                                if (isImageFile(docUrl, doc?.mimeType)) {
+                                  return (
+                                    <div key={docIdx} style={{ textAlign: 'center' }}>
+                                      {doc?.nomDocument && (
+                                        <p style={{ fontSize: '12px', fontWeight: 500, color: 'var(--color-ink-secondary)', margin: '0 0 6px 0' }}>
+                                          {doc.nomDocument}
+                                        </p>
+                                      )}
+                                      <div 
+                                        style={{ 
+                                          maxWidth: '600px', 
+                                          margin: '0 auto', 
+                                          overflow: 'hidden', 
+                                          borderRadius: '12px', 
+                                          boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+                                          background: 'var(--color-surface-200)',
+                                          border: '1px solid var(--color-edge-subtle)'
+                                        }}
+                                      >
+                                        <img
+                                          src={docUrl}
+                                          alt={doc?.nomDocument || "Attachment"}
+                                          style={{ width: '100%', display: 'block', maxHeight: '80vh', objectFit: 'contain' }}
+                                        />
+                                      </div>
                                     </div>
                                   );
                                 }

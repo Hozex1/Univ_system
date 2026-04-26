@@ -117,30 +117,41 @@ export default function MyStudents() {
       <header className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">PFE Supervision</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">My Students</h1>
-        <p className="mt-1 text-sm text-slate-600">
+      <header className="rounded-3xl border border-edge bg-surface p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-widest text-ink-tertiary">PFE Supervision</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">My Students</h1>
+        <p className="mt-1 text-sm text-ink-secondary">
           Students working on PFE topics under your supervision.
         </p>
       </header>
 
       {/* Stats */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Total Students</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">
-            {pagination?.total ?? students.length}
-          </p>
+        <div className="rounded-2xl border border-edge bg-surface p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-tertiary">Total Supervised</p>
+              <p className="text-2xl font-bold text-ink">{stats.total}</p>
+            </div>
+          </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">With Subject</p>
-          <p className="mt-1 text-2xl font-bold text-emerald-700">
-            {students.filter((s) => s.groupMembers?.[0]?.group?.sujetFinal).length}
-          </p>
+
+        <div className="rounded-2xl border border-edge bg-surface p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-tertiary">Active Projects</p>
+              <p className="text-2xl font-bold text-ink">{stats.active}</p>
+            </div>
+          </div>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Pending</p>
-          <p className="mt-1 text-2xl font-bold text-amber-700">
-            {students.filter((s) => !s.groupMembers?.[0]?.group?.sujetFinal).length}
-          </p>
+
+        <div className="rounded-2xl border border-edge bg-surface p-4 shadow-sm">
+          <div className="flex items-center gap-3">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-ink-tertiary">Finalized</p>
+              <p className="text-2xl font-bold text-ink">{stats.finalized}</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -158,7 +169,7 @@ export default function MyStudents() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search by name, email or matricule…"
-          className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+          className="flex-1 rounded-xl border border-control-border bg-surface px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
         />
         <button
           type="submit"
@@ -185,7 +196,7 @@ export default function MyStudents() {
                 <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wide text-slate-600">Phone</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-200 bg-white">
+            <tbody className="divide-y divide-edge bg-surface">>
               {students.map((student) => (
                 <StudentRow key={student.id} student={student} />
               ))}

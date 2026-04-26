@@ -22,14 +22,14 @@ function formatDate(value) {
 
 function Badge({ children, tone = 'neutral' }) {
   const tones = {
-    neutral: 'bg-gray-100 text-gray-700',
-    success: 'bg-emerald-100 text-emerald-700',
-    warning: 'bg-amber-100 text-amber-700',
-    danger: 'bg-rose-100 text-rose-700',
-    info: 'bg-blue-100 text-blue-700',
+    neutral: 'bg-ink-tertiary/10 text-ink-tertiary border border-edge-subtle',
+    success: 'bg-success/10 text-success border border-success/20',
+    warning: 'bg-warning/10 text-warning border border-warning/20',
+    danger:  'bg-danger/10 text-danger border border-danger/20',
+    info:    'bg-brand/10 text-brand border border-brand/20',
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tones[tone] || tones.neutral}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${tones[tone] || tones.neutral}`}>
       {children}
     </span>
   );
@@ -75,35 +75,35 @@ export default function StudentHistoryPage({ endpoint = '/api/v1/history/student
   }), [data]);
 
   if (loading) {
-    return <div className="p-6 text-sm text-gray-500">Loading history…</div>;
+    return <div className="p-6 text-sm text-ink-tertiary">Loading history…</div>;
   }
   if (error) {
-    return <div className="p-6 text-sm text-rose-600">{error}</div>;
+    return <div className="p-6 text-sm text-danger">{error}</div>;
   }
 
   return (
     <div className="p-6 space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-gray-900">My History</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-semibold text-ink">My History</h1>
+        <p className="text-sm text-ink-tertiary mt-1">
           {data?.user?.prenom} {data?.user?.nom}
           {data?.user?.matricule ? ` · ${data.user.matricule}` : ''}
         </p>
       </header>
 
-      <nav className="flex gap-2 border-b border-gray-200">
+      <nav className="flex gap-2 border-b border-edge">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-all duration-200 ${
               tab === t.id
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-ink-tertiary hover:text-ink'
             }`}
           >
-            {t.label} <span className="ml-1 text-xs text-gray-400">({counts[t.id]})</span>
+            {t.label} <span className="ml-1 text-[10px] font-bold opacity-60">({counts[t.id]})</span>
           </button>
         ))}
       </nav>
@@ -120,18 +120,18 @@ export default function StudentHistoryPage({ endpoint = '/api/v1/history/student
 }
 
 function EmptyRow({ label }) {
-  return <div className="text-sm text-gray-500 italic py-6">No {label} yet.</div>;
+  return <div className="text-sm text-ink-tertiary italic py-6">No {label} yet.</div>;
 }
 
 function DisciplinaryList({ items }) {
   if (!items.length) return <EmptyRow label="disciplinary cases" />;
   return (
-    <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+    <ul className="divide-y divide-edge-subtle rounded-lg border border-edge bg-surface">
       {items.map((d) => (
         <li key={d.id} className="p-4 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-ink">
                 {d.infraction?.nom_en || d.infraction?.nom_ar || 'Infraction'}
               </p>
               <Badge tone={statusTone(d.status)}>{d.status}</Badge>
@@ -139,12 +139,12 @@ function DisciplinaryList({ items }) {
                 <Badge tone="neutral">severity: {d.infraction.gravite}</Badge>
               )}
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-ink-tertiary mt-1">
               Reported: {formatDate(d.dateSignal)}
               {d.reportedBy?.name ? ` · by ${d.reportedBy.name}` : ''}
             </p>
             {d.decision && (
-              <p className="text-xs text-gray-500">
+              <p className="text-xs text-ink-tertiary">
                 Decision: {d.decision.nom_en || d.decision.nom_ar}
                 {d.decision.niveauSanction ? ` (${d.decision.niveauSanction})` : ''}
                 {d.dateDecision ? ` · ${formatDate(d.dateDecision)}` : ''}
@@ -152,7 +152,7 @@ function DisciplinaryList({ items }) {
             )}
           </div>
           {d.conseil && (
-            <div className="text-right text-xs text-gray-500">
+            <div className="text-right text-xs text-ink-tertiary">
               Council: {formatDate(d.conseil.dateReunion)}
               <br />
               {d.conseil.lieu || ''}
@@ -167,11 +167,11 @@ function DisciplinaryList({ items }) {
 function ReclamationsList({ items }) {
   if (!items.length) return <EmptyRow label="reclamations" />;
   return (
-    <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+    <ul className="divide-y divide-edge-subtle rounded-lg border border-edge bg-surface">
       {items.map((r) => (
         <li key={r.id} className="p-4">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-ink">
               {r.objet_en || r.objet_ar || 'Reclamation'}
             </p>
             <Badge tone={statusTone(r.status)}>{r.status}</Badge>
@@ -179,8 +179,8 @@ function ReclamationsList({ items }) {
               <Badge tone="info">{r.type.nom_en || r.type.nom_ar}</Badge>
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-1">Submitted: {formatDate(r.createdAt)}</p>
-          <p className="text-sm text-gray-700 mt-2 line-clamp-3">
+          <p className="text-xs text-ink-tertiary mt-1">Submitted: {formatDate(r.createdAt)}</p>
+          <p className="text-sm text-ink-secondary mt-2 line-clamp-3">
             {r.description_en || r.description_ar || ''}
           </p>
         </li>
@@ -192,17 +192,17 @@ function ReclamationsList({ items }) {
 function JustificationsList({ items }) {
   if (!items.length) return <EmptyRow label="justifications" />;
   return (
-    <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+    <ul className="divide-y divide-edge-subtle rounded-lg border border-edge bg-surface">
       {items.map((j) => (
         <li key={j.id} className="p-4">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-ink">
               {j.motif_en || j.motif_ar || 'Absence'}
             </p>
             <Badge tone={statusTone(j.status)}>{j.status}</Badge>
             {j.type && <Badge tone="info">{j.type.nom_en || j.type.nom_ar}</Badge>}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-ink-tertiary mt-1">
             Absence date: {formatDate(j.dateAbsence)} · Submitted: {formatDate(j.createdAt)}
           </p>
         </li>

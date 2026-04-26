@@ -126,7 +126,8 @@ export default function HomeLoginOverlay({ open, onClose }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative my-auto w-full max-w-[420px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-surface/95 rounded-2xl shadow-2xl border border-edge"
+        className="relative my-auto w-full max-w-[420px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-edge"
+        style={{ opacity: 1 }}
       >
         {/* Close button */}
         <button
@@ -150,7 +151,7 @@ export default function HomeLoginOverlay({ open, onClose }) {
           <h1 id="home-login-title" className="text-xl font-bold text-ink tracking-tight">
             {t('login.welcome')}
           </h1>
-          <p className="mt-1 text-sm text-black">{t('login.subtitle')}</p>
+          <p className="mt-1 text-sm text-ink-secondary">{t('login.subtitle')}</p>
         </div>
 
         {/* Form */}
@@ -165,7 +166,7 @@ export default function HomeLoginOverlay({ open, onClose }) {
           )}
 
           <div className="mb-4">
-            <label htmlFor="overlay-identifier" className="block mb-1.5 text-sm font-medium text-black">
+            <label htmlFor="overlay-identifier" className="block mb-1.5 text-sm font-medium text-ink">
               {t('login.emailOrId')}
             </label>
             <input
@@ -180,7 +181,7 @@ export default function HomeLoginOverlay({ open, onClose }) {
           </div>
 
           <div className="mb-4">
-            <label htmlFor="overlay-password" className="block mb-1.5 text-sm font-medium text-black">
+            <label htmlFor="overlay-password" className="block mb-1.5 text-sm font-medium text-ink">
               {t('login.password')}
             </label>
             <div className="relative">
@@ -214,7 +215,7 @@ export default function HomeLoginOverlay({ open, onClose }) {
           </div>
 
           <div className="flex items-center justify-between mb-6">
-            <label className="flex items-center gap-2 text-sm text-black cursor-pointer select-none">
+            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer select-none">
               <input
                 type="checkbox"
                 checked={remember}

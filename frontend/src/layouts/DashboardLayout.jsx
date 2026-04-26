@@ -26,7 +26,6 @@ const ALL_MODULES = [
   { nameKey: 'nav.dashboard', path: '/dashboard', roles: ['etudiant', 'enseignant'] },
   { nameKey: 'nav.actualites', path: '/dashboard/actualites', roles: ['etudiant', 'enseignant', 'admin'] },
   { nameKey: 'nav.pfeWorkspace', path: '/dashboard/pfe-workspace', roles: ['etudiant', 'enseignant', 'admin'] },
-  { nameKey: 'nav.ai', path: '/dashboard/ai', roles: ['etudiant', 'enseignant'] },
   { nameKey: 'nav.documents', path: '/dashboard/documents', roles: ['enseignant', 'admin'] },
   { nameKey: 'nav.remiseCopies', path: '/dashboard/remise-copies', roles: ['enseignant', 'admin'] },
   {

@@ -463,7 +463,7 @@ function LinkedSpecialiteRow({ link, onUpdateQuota, onUnlink, disabled }) {
           value={quotaDraft}
           onChange={(e) => setQuotaDraft(e.target.value)}
           disabled={disabled}
-          className="w-20 rounded-md border border-edge bg-canvas px-2 py-1 text-center text-sm disabled:opacity-60"
+          className="w-20 rounded-md border border-edge bg-control-bg px-2 py-1 text-center text-sm text-ink outline-none transition focus:border-brand disabled:opacity-60"
           placeholder="∞"
         />
       </td>

@@ -291,19 +291,19 @@ export default function PfeManagementPage() {
 
   return (
     <div className="space-y-6">
-      <header className="rounded-3xl border border-slate-200/80 bg-gradient-to-br from-slate-50 via-white to-cyan-50 p-6 shadow-sm sm:p-8">
+      <header className="rounded-3xl border border-edge bg-surface p-6 shadow-sm sm:p-8">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Administration</p>
-            <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-900">PFE Management Hub</h1>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-ink-tertiary">Administration</p>
+            <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink">PFE Management Hub</h1>
+            <p className="mt-2 max-w-3xl text-sm text-ink-secondary">
               Create, assign, and supervise end-of-studies projects from a single admin workspace.
             </p>
           </div>
           <button
             type="button"
             onClick={() => refreshData(true)}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-2xl border border-control-border bg-surface px-4 py-2 text-sm font-medium text-ink-secondary transition hover:border-edge-strong hover:bg-surface-200"
             disabled={refreshing || busy}
           >
             <Loader2 className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
@@ -313,21 +313,21 @@ export default function PfeManagementPage() {
       </header>
 
       <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Subjects</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{subjects.length}</p>
+        <div className="rounded-2xl border border-edge bg-surface p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-ink-tertiary">Subjects</p>
+          <p className="mt-2 text-2xl font-bold text-ink">{subjects.length}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Groups</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{groups.length}</p>
+        <div className="rounded-2xl border border-edge bg-surface p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-ink-tertiary">Groups</p>
+          <p className="mt-2 text-2xl font-bold text-ink">{groups.length}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Pending subjects</p>
-          <p className="mt-2 text-2xl font-bold text-amber-700">{pendingSubjects}</p>
+        <div className="rounded-2xl border border-edge bg-surface p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-ink-tertiary">Pending subjects</p>
+          <p className="mt-2 text-2xl font-bold text-amber-600">{pendingSubjects}</p>
         </div>
-        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-          <p className="text-xs uppercase tracking-wide text-slate-500">Jury assignments</p>
-          <p className="mt-2 text-2xl font-bold text-slate-900">{jury.length}</p>
+        <div className="rounded-2xl border border-edge bg-surface p-4 shadow-sm">
+          <p className="text-xs uppercase tracking-wide text-ink-tertiary">Jury assignments</p>
+          <p className="mt-2 text-2xl font-bold text-ink">{jury.length}</p>
         </div>
       </section>
 
@@ -346,8 +346,8 @@ export default function PfeManagementPage() {
         </section>
       )}
 
-      <section className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <div className="mb-6 flex flex-wrap gap-2 border-b border-slate-200 pb-4">
+      <section className="rounded-3xl border border-edge bg-surface p-4 shadow-sm sm:p-6">
+        <div className="mb-6 flex flex-wrap gap-2 border-b border-edge-subtle pb-4">
           {TABS.map((tab) => (
             <button
               key={tab.id}
@@ -355,8 +355,8 @@ export default function PfeManagementPage() {
               onClick={() => setActiveTab(tab.id)}
               className={`inline-flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition ${
                 activeTab === tab.id
-                  ? 'bg-slate-900 text-white'
-                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                  ? 'bg-brand text-white'
+                  : 'bg-surface-200 text-ink-secondary hover:bg-surface-300'
               }`}
             >
               <tab.Icon className="h-4 w-4" />
@@ -367,15 +367,15 @@ export default function PfeManagementPage() {
 
         {activeTab === 'subjects' && (
           <div className="space-y-6">
-            <form onSubmit={handleCreateSubject} className="grid grid-cols-1 gap-3 rounded-2xl border border-slate-200 bg-slate-50 p-4 md:grid-cols-2 xl:grid-cols-3">
+            <form onSubmit={handleCreateSubject} className="grid grid-cols-1 gap-3 rounded-2xl border border-edge bg-surface-200 p-4 md:grid-cols-2 xl:grid-cols-3">
               <input
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-control-border bg-surface px-3 py-2 text-sm text-ink"
                 placeholder="Subject title"
                 value={subjectForm.titre}
                 onChange={(event) => setSubjectForm((prev) => ({ ...prev, titre: event.target.value }))}
               />
               <select
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-control-border bg-surface px-3 py-2 text-sm text-ink"
                 value={subjectForm.enseignantId}
                 onChange={(event) => setSubjectForm((prev) => ({ ...prev, enseignantId: event.target.value }))}
               >
@@ -387,7 +387,7 @@ export default function PfeManagementPage() {
                 ))}
               </select>
               <select
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-control-border bg-surface px-3 py-2 text-sm text-ink"
                 value={subjectForm.promoId}
                 onChange={(event) => setSubjectForm((prev) => ({ ...prev, promoId: event.target.value }))}
               >
@@ -399,7 +399,7 @@ export default function PfeManagementPage() {
                 ))}
               </select>
               <select
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-control-border bg-surface px-3 py-2 text-sm text-ink"
                 value={subjectForm.type_projet}
                 onChange={(event) => setSubjectForm((prev) => ({ ...prev, type_projet: event.target.value }))}
               >
@@ -411,7 +411,7 @@ export default function PfeManagementPage() {
               <input
                 type="number"
                 min={1}
-                className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="rounded-xl border border-control-border bg-surface px-3 py-2 text-sm text-ink"
                 placeholder="Max groups"
                 value={subjectForm.max_grps}
                 onChange={(event) =>
@@ -423,13 +423,13 @@ export default function PfeManagementPage() {
               />
               <button
                 type="submit"
-                className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-50"
+                className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white transition hover:bg-brand-hover disabled:opacity-50"
                 disabled={busy}
               >
                 Create subject
               </button>
               <textarea
-                className="md:col-span-2 xl:col-span-3 rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+                className="md:col-span-2 xl:col-span-3 rounded-xl border border-control-border bg-surface px-3 py-2 text-sm text-ink"
                 rows={3}
                 placeholder="Subject description"
                 value={subjectForm.description}
@@ -437,26 +437,26 @@ export default function PfeManagementPage() {
               />
             </form>
 
-            <div className="overflow-x-auto rounded-2xl border border-slate-200">
-              <table className="min-w-full divide-y divide-slate-200 text-sm">
-                <thead className="bg-slate-50">
+            <div className="overflow-x-auto rounded-2xl border border-edge">
+              <table className="min-w-full divide-y divide-edge text-sm">
+                <thead className="bg-surface-200">
                   <tr>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-700">Title</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-700">Teacher</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-700">Promo</th>
-                    <th className="px-3 py-2 text-left font-semibold text-slate-700">Status</th>
-                    <th className="px-3 py-2 text-right font-semibold text-slate-700">Actions</th>
+                    <th className="px-3 py-2 text-left font-semibold text-ink-secondary">Title</th>
+                    <th className="px-3 py-2 text-left font-semibold text-ink-secondary">Teacher</th>
+                    <th className="px-3 py-2 text-left font-semibold text-ink-secondary">Promo</th>
+                    <th className="px-3 py-2 text-left font-semibold text-ink-secondary">Status</th>
+                    <th className="px-3 py-2 text-right font-semibold text-ink-secondary">Actions</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-200 bg-white">
+                <tbody className="divide-y divide-edge bg-surface">
                   {subjects.map((subject) => (
                     <tr key={subject.id}>
                       <td className="px-3 py-2">
-                        <p className="font-medium text-slate-900">{subjectLabel(subject)}</p>
-                        <p className="text-xs text-slate-500 line-clamp-1">{subject.description || subject.description_ar || '-'}</p>
+                        <p className="font-medium text-ink">{subjectLabel(subject)}</p>
+                        <p className="text-xs text-ink-tertiary line-clamp-1">{subject.description || subject.description_ar || '-'}</p>
                       </td>
-                      <td className="px-3 py-2 text-slate-700">{subject.enseignant || '-'}</td>
-                      <td className="px-3 py-2 text-slate-700">{subject.promo || '-'}</td>
+                      <td className="px-3 py-2 text-ink-secondary">{subject.enseignant || '-'}</td>
+                      <td className="px-3 py-2 text-ink-secondary">{subject.promo || '-'}</td>
                       <td className="px-3 py-2">
                         <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${getStatusClass(subject.status, SUBJECT_STATUS_CLASS)}`}>
                           {subject.status}
@@ -725,8 +725,8 @@ export default function PfeManagementPage() {
         )}
       </section>
 
-      <footer className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs text-slate-600">
-        <p className="font-semibold text-slate-800">Admin-only workflow</p>
+      <footer className="rounded-2xl border border-edge bg-surface-200 p-4 text-xs text-ink-tertiary">
+        <p className="font-semibold text-ink-secondary">Admin-only workflow</p>
         <p className="mt-1">
           PFE creation, assignment, and jury actions are managed from this hub under admin permissions only.
         </p>

@@ -64,7 +64,7 @@ export default function ForgotPasswordPage() {
           <h1 className="text-xl font-bold text-ink tracking-tight">
             {sent ? t('forgotPassword.titleSent') : t('forgotPassword.title')}
           </h1>
-          <p className="mt-1 text-sm text-black">
+          <p className="mt-1 text-sm text-ink-secondary">
             {sent ? t('forgotPassword.subtitleSent') : t('forgotPassword.subtitle')}
           </p>
         </div>
@@ -130,7 +130,7 @@ export default function ForgotPasswordPage() {
 
               {/* Email */}
               <div className="mb-6">
-                <label htmlFor="reset-email" className="block mb-1.5 text-sm font-medium text-black">
+                <label htmlFor="reset-email" className="block mb-1.5 text-sm font-medium text-ink">
                   {t('forgotPassword.emailLabel')}
                 </label>
                 <input

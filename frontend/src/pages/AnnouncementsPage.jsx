@@ -48,121 +48,105 @@ const formatDate = (value) => {
   return date.toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
 };
 
-/* ── Media preview (per card) ─────────────────────────────── */
+/* ── Media Indicator (per card) ───────────────────────────── */
 
-/* ── Card thumbnail — static / non-interactive so clicks reach the card ── */
-
+/**
+ * CardMedia — Refactored as a clean visual indicator.
+ * Displays a subtle SVG icon (clip or play) to signal that an attachment exists.
+ */
 function CardMedia({ media }) {
   if (!media) return null;
 
-  if (media.kind === 'youtube') {
-    return (
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-900">
-        <img src={media.thumbnailUrl} alt="" loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-        <div className="absolute inset-0 flex items-center justify-center bg-black/25">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-red-600 shadow-lg">
-            <svg className="h-5 w-5 translate-x-0.5 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-        </div>
-      </div>
-    );
-  }
+  const config = {
+    youtube: { 
+      icon: <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
+      color: 'text-red-500',
+      bg: 'bg-red-50'
+    },
+    video: { 
+      icon: <path d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" />,
+      color: 'text-brand',
+      bg: 'bg-brand/10'
+    },
+    image: { 
+      icon: <path d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />,
+      color: 'text-emerald-500',
+      bg: 'bg-emerald-50'
+    },
+    // Default fallback to "clip" icon for files/docs
+    file: { 
+      icon: <path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />,
+      color: 'text-slate-500',
+      bg: 'bg-slate-100'
+    }
+  };
 
-  if (media.kind === 'video') {
-    return (
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-900">
-        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 ring-2 ring-white/40">
-            <svg className="h-6 w-6 translate-x-0.5 text-white" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M8 5v14l11-7z" />
-            </svg>
-          </div>
-          <p className="text-xs text-white/60">Click to play</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (media.kind === 'image') {
-    return (
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-100">
-        <img
-          src={media.url}
-          alt=""
-          loading="lazy"
-          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.03]"
-        />
-      </div>
-    );
-  }
-
-  // pdf / doc / file — static badge, no link (card handles the click)
-  const iconColor =
-    media.kind === 'pdf' ? 'text-red-600 bg-red-50'
-      : media.kind === 'doc' ? 'text-blue-600 bg-blue-50'
-      : 'text-slate-600 bg-slate-100';
-  const kindLabel =
-    media.kind === 'pdf' ? 'PDF' : media.kind === 'doc' ? 'Word' : 'File';
+  const meta = config[media.kind] || config.file;
 
   return (
-    <div className="flex items-center gap-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-      <div className={`flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg ${iconColor}`}>
-        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-          <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" strokeLinejoin="round" />
-          <path d="M14 3v5h5" strokeLinejoin="round" />
-        </svg>
-      </div>
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-slate-900">{media.label}</p>
-        <p className="text-xs uppercase tracking-wide text-slate-500">{kindLabel} · click to open</p>
-      </div>
+    <div 
+      className={`flex h-8 w-8 items-center justify-center rounded-lg ${meta.bg} ${meta.color} transition-all duration-200 hover:scale-110 shadow-sm border border-black/5`}
+      title={`${media.kind} attached`}
+    >
+      <svg className="h-4.5 w-4.5" fill="none" stroke="currentColor" strokeWidth={2.2} viewBox="0 0 24 24">
+        {meta.icon}
+      </svg>
     </div>
   );
 }
 
-/* ── Full media — used inside the detail modal ────────────────── */
+/* ── Full Media Display (modal) ───────────────────────────── */
 
+/**
+ * FullMedia — Displays the actual attachment in the expanded view.
+ * Constrained to 600px max-width as per UX architecture requirements.
+ */
 function FullMedia({ media }) {
   if (!media) return null;
 
+  // Wrap common styles
+  const Container = ({ children }) => (
+    <div className="mx-auto w-full max-w-[600px] overflow-hidden rounded-xl border border-edge bg-slate-900 shadow-xl">
+      {children}
+    </div>
+  );
+
   if (media.kind === 'youtube') {
     return (
-      <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-slate-900">
-        <iframe
-          src={media.embedUrl}
-          title="YouTube video"
-          loading="lazy"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          className="absolute inset-0 h-full w-full border-0"
-        />
-      </div>
+      <Container>
+        <div className="relative aspect-video w-full">
+          <iframe
+            src={media.embedUrl}
+            title="YouTube video player"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            className="absolute inset-0 h-full w-full border-0"
+          />
+        </div>
+      </Container>
     );
   }
 
   if (media.kind === 'video') {
     return (
-      <div className="overflow-hidden rounded-xl bg-slate-900">
+      <Container>
         <video
           src={media.url}
           controls
-          preload="metadata"
-          className="max-h-[60vh] w-full"
+          className="max-h-[50vh] w-full"
         />
-      </div>
+      </Container>
     );
   }
 
   if (media.kind === 'image') {
     return (
-      <div className="flex justify-center overflow-hidden rounded-xl bg-slate-100">
+      <div className="mx-auto w-full max-w-[600px] overflow-hidden rounded-xl border border-edge bg-surface-200 shadow-sm">
         <img
           src={media.url}
-          alt=""
+          alt="Announcement attachment"
           loading="eager"
-          className="max-h-[60vh] w-auto max-w-full object-contain"
+          className="max-h-[60vh] w-auto max-w-full mx-auto object-contain"
         />
       </div>
     );
@@ -170,20 +154,20 @@ function FullMedia({ media }) {
 
   if (media.kind === 'pdf') {
     return (
-      <div className="overflow-hidden rounded-xl border border-slate-200">
+      <div className="overflow-hidden rounded-xl border border-edge bg-white">
         <iframe
           src={media.url}
-          title="PDF document"
+          title="PDF Document"
           className="h-[62vh] w-full border-0"
         />
-        <div className="flex items-center justify-between border-t border-slate-200 bg-slate-50 px-4 py-2.5">
-          <span className="text-xs text-slate-500">PDF Document</span>
+        <div className="flex items-center justify-between border-t border-edge-subtle bg-slate-50 px-4 py-2.5">
+          <span className="text-xs font-medium text-slate-500 uppercase tracking-wide">PDF Attachment</span>
           <a
             href={media.url}
             download
             target="_blank"
             rel="noopener noreferrer"
-            className="text-sm font-medium text-indigo-600 hover:text-indigo-700"
+            className="text-sm font-bold text-brand hover:underline"
           >
             Download ↓
           </a>
@@ -192,7 +176,7 @@ function FullMedia({ media }) {
     );
   }
 
-  // doc / file
+  // Fallback for DOC/Other files
   const iconColor = media.kind === 'doc' ? 'text-blue-600 bg-blue-50' : 'text-slate-600 bg-slate-100';
   return (
     <a
@@ -200,71 +184,80 @@ function FullMedia({ media }) {
       download
       target="_blank"
       rel="noopener noreferrer"
-      className="flex items-center gap-4 rounded-xl border border-slate-200 bg-slate-50 p-5 transition-colors hover:bg-slate-100"
+      className="flex items-center gap-4 rounded-xl border border-edge bg-surface p-5 transition-all hover:bg-surface-200 hover:shadow-md"
     >
       <div className={`flex h-14 w-14 flex-shrink-0 items-center justify-center rounded-xl ${iconColor}`}>
         <svg className="h-7 w-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6}>
-          <path d="M14 3H7a2 2 0 00-2 2v14a2 2 0 002 2h10a2 2 0 002-2V8l-5-5z" strokeLinejoin="round" />
-          <path d="M14 3v5h5" strokeLinejoin="round" />
+          <path d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
         </svg>
       </div>
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-slate-900">{media.label}</p>
+        <p className="font-semibold text-ink">{media.label || 'Attachment'}</p>
         <p className="text-sm text-slate-500">
           {media.kind === 'doc' ? 'Word document' : 'File'} — click to download
         </p>
       </div>
-      <span className="flex-shrink-0 text-sm font-medium text-indigo-600">Download ↓</span>
+      <span className="flex-shrink-0 text-sm font-bold text-brand">Download ↓</span>
     </a>
   );
 }
 
-/* ── Featured hero (large video) ──────────────────────────── */
+/* ── Featured Hero (Large card) ───────────────────────────── */
 
 function FeaturedHero({ item, media, onExpand }) {
   if (!item || !media) return null;
   return (
     <section
-      className="mb-10 cursor-pointer overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
+      className="mb-10 cursor-pointer overflow-hidden rounded-2xl border border-edge bg-surface shadow-sm transition-all duration-200 hover:shadow-md hover:border-brand/30"
       onClick={() => onExpand?.(item)}
     >
-      <div className="grid md:grid-cols-5">
-        <div className="md:col-span-3">
-          {(media.kind === 'youtube' || media.kind === 'video' || media.kind === 'image') && (
-            <div className="relative aspect-video w-full bg-slate-900">
-              <CardMedia media={media} />
-            </div>
-          )}
+      <div className="flex flex-col p-6 md:p-8">
+        <div className="mb-4 flex items-center gap-2">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${priorityMeta(item).badge}`}>
+            <span className={`h-1.5 w-1.5 rounded-full ${priorityMeta(item).dot}`} />
+            {priorityMeta(item).label}
+          </span>
+          <span className="rounded-full bg-brand/5 px-2.5 py-0.5 text-xs font-medium text-brand ring-1 ring-inset ring-brand/10">
+            {getCategory(item)}
+          </span>
+          <span className="ml-auto rounded-md bg-surface-200 px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-ink-tertiary">
+            Featured
+          </span>
         </div>
-        <div className="flex flex-col justify-center p-6 md:col-span-2 md:p-8">
-          <div className="mb-3 flex items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${priorityMeta(item).badge}`}>
-              <span className={`h-1.5 w-1.5 rounded-full ${priorityMeta(item).dot}`} />
-              {priorityMeta(item).label}
-            </span>
-            <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
-              {getCategory(item)}
-            </span>
-          </div>
-          <h2 className="mb-3 text-2xl font-bold leading-tight tracking-tight text-slate-900 md:text-3xl">
+        
+        <div className="flex items-start justify-between gap-4 mb-3">
+          <h2 className="text-2xl font-bold leading-tight tracking-tight text-ink md:text-3xl">
             {getTitle(item)}
           </h2>
-          <p className="mb-4 text-sm text-slate-600 line-clamp-4">
-            {stripYouTubeUrl(getContent(item))}
-          </p>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-slate-500">
+          <CardMedia media={media} />
+        </div>
+        
+        <p className="mb-6 text-sm text-ink-secondary leading-relaxed max-w-3xl line-clamp-3">
+          {stripYouTubeUrl(getContent(item))}
+        </p>
+
+        <div className="mt-auto flex items-center justify-between border-t border-edge pt-4">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 rounded-full bg-surface-200 flex items-center justify-center text-ink-tertiary">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>
+            </div>
+            <p className="text-xs text-ink-tertiary font-medium">
               {formatDate(item?.datePublication || item?.createdAt)}
             </p>
-            <span className="text-xs font-medium text-indigo-600">View full →</span>
           </div>
+          <span className="flex items-center gap-1 text-sm font-bold text-brand group-hover:underline">
+            Read details 
+            <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+              <path d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </span>
         </div>
       </div>
     </section>
   );
 }
 
-/* ── Card ─────────────────────────────────────────────────── */
+/* ── Standard Announcement Card ───────────────────────────── */
 
 function AnnouncementCard({ item, isAdmin, onEdit, onDelete, onExpand }) {
   const media = useMemo(() => resolvePrimaryMedia(item, { resolveMediaUrl }), [item]);
@@ -273,74 +266,73 @@ function AnnouncementCard({ item, isAdmin, onEdit, onDelete, onExpand }) {
 
   return (
     <article
-      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+      className="group flex h-full cursor-pointer flex-col overflow-hidden rounded-2xl border border-edge bg-surface shadow-sm transition-all duration-200 hover:-translate-y-1 hover:shadow-lg hover:border-brand/20"
       onClick={() => onExpand?.(item)}
     >
-      {media && (
-        <div className="p-5 pb-0">
-          <CardMedia media={media} />
-        </div>
-      )}
-
       <div className="flex flex-1 flex-col gap-3 p-5">
-        <div className="flex items-center gap-2">
-          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${meta.badge}`}>
+        <div className="flex items-center gap-2 mb-1">
+          <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ${meta.badge}`}>
             <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
             {meta.label}
           </span>
-          <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+          <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-600">
             {getCategory(item)}
           </span>
+          
           {isAdmin && (
             <div className="ml-auto flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onEdit(item); }}
-                className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-                aria-label="Edit announcement"
+                className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-brand"
                 title="Edit"
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                  <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" strokeLinecap="round" strokeLinejoin="round" />
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L7 19l-4 1 1-4 12.5-12.5z" />
                 </svg>
               </button>
               <button
                 type="button"
                 onClick={(e) => { e.stopPropagation(); onDelete(item.id); }}
                 className="rounded-md p-1.5 text-slate-500 hover:bg-red-50 hover:text-red-600"
-                aria-label="Delete announcement"
                 title="Delete"
               >
-                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-                  <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6M5 6l1 14a2 2 0 002 2h8a2 2 0 002-2l1-14" strokeLinecap="round" strokeLinejoin="round" />
+                <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
+                  <path d="M3 6h18M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2M10 11v6M14 11v6M5 6l1 14a2 2 0 002 2h8a2 2 0 002-2l1-14" />
                 </svg>
               </button>
             </div>
           )}
         </div>
 
-        <h3 className="line-clamp-2 text-lg font-semibold leading-snug tracking-tight text-slate-900">
-          {getTitle(item)}
-        </h3>
+        <div className="flex items-start justify-between gap-3 min-h-[3rem]">
+          <h3 className="line-clamp-2 text-lg font-bold leading-tight tracking-tight text-ink">
+            {getTitle(item)}
+          </h3>
+          <CardMedia media={media} />
+        </div>
 
-        <p className="line-clamp-3 text-sm leading-relaxed text-slate-600">
+        <p className="line-clamp-3 text-sm leading-relaxed text-ink-secondary mb-2">
           {body || 'No description provided.'}
         </p>
 
-        <div className="mt-auto flex items-center justify-between pt-2 text-xs text-slate-500">
-          <span>{formatDate(item?.datePublication || item?.createdAt)}</span>
-          <span className="font-medium text-indigo-500 group-hover:text-indigo-700">View full →</span>
+        <div className="mt-auto flex items-center justify-between border-t border-edge pt-3 text-[11px] text-ink-tertiary font-medium">
+          <span className="flex items-center gap-1">
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+            {formatDate(item?.datePublication || item?.createdAt)}
+          </span>
+          <span className="font-bold text-brand group-hover:underline">View Details →</span>
         </div>
       </div>
     </article>
   );
 }
 
-/* ── Skeleton ─────────────────────────────────────────────── */
+/* ── Skeletons & States ───────────────────────────────────── */
 
 function CardSkeleton() {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+    <div className="overflow-hidden rounded-2xl border border-edge bg-surface p-5 shadow-sm">
       <div className="mb-4 aspect-video w-full animate-pulse rounded-xl bg-slate-200" />
       <div className="mb-3 flex gap-2">
         <div className="h-5 w-16 animate-pulse rounded-full bg-slate-200" />
@@ -348,36 +340,30 @@ function CardSkeleton() {
       </div>
       <div className="mb-2 h-5 w-3/4 animate-pulse rounded bg-slate-200" />
       <div className="mb-2 h-4 w-full animate-pulse rounded bg-slate-200" />
-      <div className="h-4 w-5/6 animate-pulse rounded bg-slate-200" />
     </div>
   );
 }
 
-/* ── Empty state ──────────────────────────────────────────── */
-
 function EmptyState({ onCreate, canCreate }) {
   return (
-    <div className="mx-auto flex max-w-md flex-col items-center justify-center rounded-2xl border border-dashed border-slate-300 bg-white px-6 py-16 text-center">
+    <div className="mx-auto flex max-w-md flex-col items-center justify-center rounded-2xl border border-dashed border-edge-strong bg-surface px-6 py-16 text-center">
       <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-50">
         <svg className="h-7 w-7 text-indigo-600" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8}>
-          <path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" strokeLinecap="round" strokeLinejoin="round" />
+          <path d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-1.234 9.168-3v14c-1.543-1.766-5.067-3-9.168-3H7a3.988 3.988 0 01-1.564-.317z" />
         </svg>
       </div>
-      <h3 className="mb-1 text-lg font-semibold text-slate-900">No announcements yet</h3>
+      <h3 className="mb-1 text-lg font-semibold text-ink">No announcements yet</h3>
       <p className="mb-4 text-sm text-slate-500">
         {canCreate
           ? 'Create your first announcement to share news, events, or important updates.'
-          : 'Check back later for news and updates from the administration.'}
+          : 'Check back later for updates.'}
       </p>
       {canCreate && (
         <button
           type="button"
           onClick={onCreate}
-          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700"
+          className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 shadow-md"
         >
-          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-            <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-          </svg>
           New Announcement
         </button>
       )}
@@ -385,7 +371,7 @@ function EmptyState({ onCreate, canCreate }) {
   );
 }
 
-/* ── Create / Edit Modal ──────────────────────────────────── */
+/* ── Modals ────────────────────────────────────────────────── */
 
 const CATEGORY_OPTIONS = ['Administrative', 'Academic', 'Events', 'Research', 'Student Life'];
 const PRIORITY_OPTIONS = [
@@ -481,19 +467,18 @@ function AnnouncementModal({ open, initial, onClose, onSaved }) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4 backdrop-blur-sm">
-      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
-          <h2 className="text-lg font-semibold text-slate-900">
+      <div className="relative flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl">
+        <div className="flex items-center justify-between border-b border-edge px-6 py-4">
+          <h2 className="text-lg font-semibold text-ink">
             {isEdit ? 'Edit Announcement' : 'New Announcement'}
           </h2>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Close"
+            className="rounded-md p-1.5 text-slate-500 hover:bg-slate-100"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
         </div>
@@ -514,7 +499,7 @@ function AnnouncementModal({ open, initial, onClose, onSaved }) {
                 value={form.titre}
                 onChange={setField('titre')}
                 placeholder="Announcement title"
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                className="w-full rounded-lg border border-control-border bg-surface px-3 py-2 text-sm text-ink outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
             </div>
 
@@ -524,7 +509,7 @@ function AnnouncementModal({ open, initial, onClose, onSaved }) {
                 <select
                   value={form.typeAnnonce}
                   onChange={setField('typeAnnonce')}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full rounded-lg border border-control-border bg-surface px-3 py-2 text-sm text-ink outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20"
                 >
                   {CATEGORY_OPTIONS.map((c) => (
                     <option key={c} value={c}>{c}</option>
@@ -536,7 +521,7 @@ function AnnouncementModal({ open, initial, onClose, onSaved }) {
                 <select
                   value={form.priority}
                   onChange={setField('priority')}
-                  className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                  className="w-full rounded-lg border border-control-border bg-surface px-3 py-2 text-sm text-ink outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20"
                 >
                   {PRIORITY_OPTIONS.map((p) => (
                     <option key={p.value} value={p.value}>{p.label}</option>
@@ -549,68 +534,52 @@ function AnnouncementModal({ open, initial, onClose, onSaved }) {
               <label className="mb-1.5 block text-sm font-medium text-slate-700">Content *</label>
               <textarea
                 required
-                rows={6}
+                rows={5}
                 value={form.contenu}
                 onChange={setField('contenu')}
-                placeholder="Share the details of your announcement..."
-                className="w-full resize-none rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                placeholder="Description..."
+                className="w-full resize-none rounded-lg border border-control-border bg-surface px-3 py-2 text-sm text-ink outline-none transition-all focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
             </div>
 
             <div>
-              <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                YouTube URL <span className="font-normal text-slate-500">(optional)</span>
-              </label>
+              <label className="mb-1.5 block text-sm font-medium text-slate-700">YouTube URL</label>
               <input
                 type="url"
                 value={form.youtubeUrl}
                 onChange={setField('youtubeUrl')}
-                placeholder="https://www.youtube.com/watch?v=..."
-                className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 shadow-sm outline-none transition-colors focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20"
+                placeholder="https://..."
+                className="w-full rounded-lg border border-control-border bg-surface px-3 py-2 text-sm text-ink outline-none focus:border-brand focus:ring-2 focus:ring-brand/20"
               />
-              <p className="mt-1 text-xs text-slate-500">
-                If provided, a video player will be embedded in the card.
-              </p>
             </div>
 
             {!isEdit && (
               <div>
-                <label className="mb-1.5 block text-sm font-medium text-slate-700">
-                  Attachment <span className="font-normal text-slate-500">(optional)</span>
-                </label>
+                <label className="mb-1.5 block text-sm font-medium text-slate-700">Attachment</label>
                 <input
                   type="file"
-                  accept="image/*,application/pdf,.doc,.docx,video/mp4,video/webm,video/ogg,video/quicktime,.mp4,.webm,.ogg,.ogv,.mov,.mkv,.avi"
                   onChange={(e) => setFile(e.target.files?.[0] || null)}
-                  className="block w-full cursor-pointer text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-4 file:py-2 file:text-sm file:font-medium file:text-indigo-700 hover:file:bg-indigo-100"
+                  className="block w-full text-sm text-slate-500 file:mr-4 file:rounded-lg file:border-0 file:bg-brand/10 file:px-4 file:py-2 file:text-sm file:font-bold file:text-brand hover:file:bg-brand/20"
                 />
-                <p className="mt-1 text-xs text-slate-500">
-                  Allowed: JPG, PNG, GIF, PDF, Word, MP4, WebM, MOV · Max 200 MB
-                </p>
-                {file && (
-                  <p className="mt-1 text-xs text-slate-500">
-                    Selected: {file.name} ({(file.size / 1024 / 1024).toFixed(1)} MB)
-                  </p>
-                )}
               </div>
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-slate-200 bg-slate-50 px-6 py-4">
+          <div className="flex items-center justify-end gap-2 border-t border-edge bg-slate-50 px-6 py-4">
             <button
               type="button"
               onClick={onClose}
               disabled={submitting}
-              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-50 disabled:opacity-50"
+              className="rounded-lg border border-edge-strong bg-surface px-4 py-2 text-sm font-medium text-ink-secondary hover:bg-surface-200"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={submitting}
-              className="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 disabled:opacity-50"
+              className="rounded-lg bg-indigo-600 px-6 py-2 text-sm font-bold text-white transition-all hover:bg-indigo-700 disabled:opacity-50 shadow-md"
             >
-              {submitting ? 'Saving...' : isEdit ? 'Save Changes' : 'Publish'}
+              {submitting ? 'Saving...' : 'Publish'}
             </button>
           </div>
         </form>
@@ -619,7 +588,7 @@ function AnnouncementModal({ open, initial, onClose, onSaved }) {
   );
 }
 
-/* ── Detail modal — full content + full media ─────────────── */
+/* ── Announcement Detail Modal ────────────────────────────── */
 
 function AnnouncementDetailModal({ item, onClose }) {
   const media = useMemo(() => resolvePrimaryMedia(item, { resolveMediaUrl }), [item]);
@@ -637,63 +606,42 @@ function AnnouncementDetailModal({ item, onClose }) {
   const meta = priorityMeta(item);
 
   return (
-    <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm"
-      onClick={onClose}
-    >
-      <div
-        className="relative flex max-h-[92vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-white shadow-2xl"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm" onClick={onClose}>
+      <div className="relative flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-surface shadow-2xl" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between border-b border-edge px-6 py-4">
           <div className="flex flex-wrap items-center gap-2">
-            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-medium ${meta.badge}`}>
+            <span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider ${meta.badge}`}>
               <span className={`h-1.5 w-1.5 rounded-full ${meta.dot}`} />
               {meta.label}
             </span>
-            <span className="rounded-full bg-indigo-50 px-2.5 py-0.5 text-xs font-medium text-indigo-700 ring-1 ring-inset ring-indigo-600/20">
+            <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-bold uppercase tracking-wider text-slate-600">
               {getCategory(item)}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="ml-4 rounded-lg p-1.5 text-slate-500 hover:bg-slate-100 hover:text-slate-900"
-            aria-label="Close"
-          >
+          <button type="button" onClick={onClose} className="rounded-lg p-1.5 text-slate-500 hover:bg-slate-100">
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-              <path d="M6 6l12 12M18 6L6 18" strokeLinecap="round" />
+              <path d="M6 6l12 12M18 6L6 18" />
             </svg>
           </button>
         </div>
 
-        {/* Scrollable body */}
-        <div className="flex-1 overflow-y-auto">
-          {/* Title & date */}
-          <div className="px-6 pt-5 pb-4">
-            <h2 className="text-2xl font-bold leading-tight tracking-tight text-slate-900">
-              {getTitle(item)}
-            </h2>
-            <p className="mt-1.5 text-xs text-slate-500">
-              {formatDate(item?.datePublication || item?.createdAt)}
-              {item?.auteur && (
-                <> · {[item.auteur.prenom, item.auteur.nom].filter(Boolean).join(' ')}</>
-              )}
-            </p>
-          </div>
+        <div className="flex-1 overflow-y-auto px-6 py-6">
+          <h2 className="text-2xl font-bold leading-tight tracking-tight text-ink mb-2">
+            {getTitle(item)}
+          </h2>
+          <p className="text-xs text-ink-tertiary mb-6">
+            Published on {formatDate(item?.datePublication || item?.createdAt)}
+          </p>
 
-          {/* Full-size media */}
           {media && (
-            <div className="px-6 pb-4">
+            <div className="mb-8">
               <FullMedia media={media} />
             </div>
           )}
 
-          {/* Full content text */}
           {body && (
-            <div className="px-6 pb-8">
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-slate-700">
+            <div className="prose prose-sm max-w-none">
+              <p className="whitespace-pre-wrap text-sm leading-relaxed text-ink-secondary">
                 {body}
               </p>
             </div>
@@ -704,14 +652,11 @@ function AnnouncementDetailModal({ item, onClose }) {
   );
 }
 
-/* ── Page ─────────────────────────────────────────────────── */
+/* ── Main Page ─────────────────────────────────────────────── */
 
 export default function AnnouncementsPage() {
   const { user } = useAuth();
-  const isAdmin = useMemo(
-    () => Array.isArray(user?.roles) && user.roles.includes('admin'),
-    [user],
-  );
+  const isAdmin = useMemo(() => Array.isArray(user?.roles) && user.roles.includes('admin'), [user]);
 
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -727,15 +672,12 @@ export default function AnnouncementsPage() {
       setItems(Array.isArray(response?.data) ? response.data : []);
     } catch (err) {
       console.error('Failed to load announcements', err);
-      setItems([]);
     } finally {
       setLoading(false);
     }
   };
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
+  useEffect(() => { fetchItems(); }, []);
 
   const filtered = useMemo(() => {
     if (!category) return items;
@@ -750,10 +692,7 @@ export default function AnnouncementsPage() {
     });
     if (!featuredCandidate) return { featured: null, grid: filtered };
     return {
-      featured: {
-        item: featuredCandidate,
-        media: resolvePrimaryMedia(featuredCandidate, { resolveMediaUrl }),
-      },
+      featured: { item: featuredCandidate, media: resolvePrimaryMedia(featuredCandidate, { resolveMediaUrl }) },
       grid: filtered.filter((x) => x.id !== featuredCandidate.id),
     };
   }, [filtered]);
@@ -763,78 +702,49 @@ export default function AnnouncementsPage() {
     return ['All', ...Array.from(set)];
   }, [items]);
 
-  const handleEdit = (item) => {
-    setEditing(item);
-    setModalOpen(true);
-  };
-
+  const handleEdit = (item) => { setEditing(item); setModalOpen(true); };
+  const handleCreate = () => { setEditing(null); setModalOpen(true); };
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this announcement?')) return;
     try {
       await request(`/api/v1/annonces/${id}`, { method: 'DELETE' });
-      await fetchItems();
-    } catch (err) {
-      window.alert(err?.message || 'Delete failed.');
-    }
-  };
-
-  const handleCreate = () => {
-    setEditing(null);
-    setModalOpen(true);
+      fetchItems();
+    } catch (err) { window.alert(err?.message || 'Delete failed.'); }
   };
 
   return (
     <div className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 lg:py-12">
-        {/* Header */}
         <header className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
-              Announcements
-            </h1>
-            <p className="mt-2 text-sm text-slate-600">
-              Stay up to date with the latest news, events, and important updates.
-            </p>
+            <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">Announcements</h1>
+            <p className="mt-2 text-sm text-slate-600">News, events, and important university updates.</p>
           </div>
           {isAdmin && (
-            <button
-              type="button"
-              onClick={handleCreate}
-              className="inline-flex items-center gap-2 self-start rounded-lg bg-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm transition-all hover:bg-indigo-700 hover:shadow-md sm:self-auto"
-            >
-              <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}>
-                <path d="M12 5v14M5 12h14" strokeLinecap="round" />
-              </svg>
+            <button onClick={handleCreate} className="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-bold text-white shadow-md transition-all hover:bg-indigo-700">
               New Announcement
             </button>
           )}
         </header>
 
-        {/* Category chips */}
-        {!loading && items.length > 0 && categories.length > 1 && (
+        {!loading && items.length > 0 && (
           <div className="mb-8 flex flex-wrap gap-2">
-            {categories.map((c) => {
-              const value = c === 'All' ? '' : c;
-              const active = category === value;
-              return (
-                <button
-                  key={c}
-                  type="button"
-                  onClick={() => setCategory(value)}
-                  className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-all ${
-                    active
-                      ? 'bg-slate-900 text-white shadow-sm'
-                      : 'bg-white text-slate-700 ring-1 ring-inset ring-slate-200 hover:bg-slate-100'
-                  }`}
-                >
-                  {c}
-                </button>
-              );
-            })}
+            {categories.map((c) => (
+              <button
+                key={c}
+                onClick={() => setCategory(c === 'All' ? '' : c)}
+                className={`rounded-full px-4 py-1.5 text-xs font-bold transition-all ${
+                  (category === c || (c === 'All' && !category))
+                    ? 'bg-ink text-white'
+                    : 'bg-white text-ink-secondary ring-1 ring-edge hover:bg-slate-50'
+                }`}
+              >
+                {c}
+              </button>
+            ))}
           </div>
         )}
 
-        {/* Content */}
         {loading ? (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => <CardSkeleton key={i} />)}
@@ -843,40 +753,18 @@ export default function AnnouncementsPage() {
           <EmptyState onCreate={handleCreate} canCreate={isAdmin} />
         ) : (
           <>
-            {featured && (
-              <FeaturedHero
-                item={featured.item}
-                media={featured.media}
-                onExpand={setDetail}
-              />
-            )}
+            {featured && <FeaturedHero item={featured.item} media={featured.media} onExpand={setDetail} />}
             <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {grid.map((item) => (
-                <AnnouncementCard
-                  key={item.id}
-                  item={item}
-                  isAdmin={isAdmin}
-                  onEdit={handleEdit}
-                  onDelete={handleDelete}
-                  onExpand={setDetail}
-                />
+                <AnnouncementCard key={item.id} item={item} isAdmin={isAdmin} onEdit={handleEdit} onDelete={handleDelete} onExpand={setDetail} />
               ))}
             </div>
           </>
         )}
       </div>
 
-      <AnnouncementModal
-        open={modalOpen}
-        initial={editing}
-        onClose={() => { setModalOpen(false); setEditing(null); }}
-        onSaved={fetchItems}
-      />
-
-      <AnnouncementDetailModal
-        item={detail}
-        onClose={() => setDetail(null)}
-      />
+      <AnnouncementModal open={modalOpen} initial={editing} onClose={() => { setModalOpen(false); setEditing(null); }} onSaved={fetchItems} />
+      <AnnouncementDetailModal item={detail} onClose={() => setDetail(null)} />
     </div>
   );
 }

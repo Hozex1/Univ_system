@@ -61,7 +61,7 @@ const SUBJECT_STATUS = {
     bg: 'bg-warning/10',
     text: 'text-warning',
     dot: 'bg-warning',
-    border: 'border-warning/30',
+    border: 'border-edge',
     ring: 'ring-warning/20',
   },
   valide: {
@@ -69,7 +69,7 @@ const SUBJECT_STATUS = {
     bg: 'bg-success/10',
     text: 'text-success',
     dot: 'bg-success',
-    border: 'border-success/30',
+    border: 'border-edge',
     ring: 'ring-success/20',
   },
   reserve: {
@@ -77,7 +77,7 @@ const SUBJECT_STATUS = {
     bg: 'bg-brand/10',
     text: 'text-brand',
     dot: 'bg-brand',
-    border: 'border-brand/30',
+    border: 'border-edge',
     ring: 'ring-brand/20',
   },
   affecte: {
@@ -441,7 +441,7 @@ function RightPanel({ stats, systemStatus, lastUpdated, isAdmin, loading }) {
       </div>
 
       {isAdmin && (
-        <div className="rounded-2xl border border-brand/20 bg-brand/5 p-4">
+        <div className="rounded-2xl border border-edge bg-brand/5 p-4">
           <div className="flex items-center gap-2 mb-1.5">
             <Zap className="w-3.5 h-3.5 text-brand" />
             <p className="text-xs font-semibold text-brand">Campaign Active</p>

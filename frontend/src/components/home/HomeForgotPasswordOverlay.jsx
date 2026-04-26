@@ -71,7 +71,7 @@ export default function HomeForgotPasswordOverlay({ open, onClose }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative my-auto w-full max-w-[420px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-surface/95 rounded-2xl shadow-2xl border border-edge"
+        className="relative my-auto w-full max-w-[420px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-edge"
       >
         <button
           type="button"
@@ -96,7 +96,7 @@ export default function HomeForgotPasswordOverlay({ open, onClose }) {
           <h1 id="home-forgot-title" className="text-xl font-bold text-ink tracking-tight">
             {sent ? t('forgotPassword.titleSent') : t('forgotPassword.title')}
           </h1>
-          <p className="mt-1 text-sm text-black">
+          <p className="mt-1 text-sm text-ink-secondary">
             {sent ? t('forgotPassword.subtitleSent') : t('forgotPassword.subtitle')}
           </p>
         </div>
@@ -154,7 +154,7 @@ export default function HomeForgotPasswordOverlay({ open, onClose }) {
               )}
 
               <div className="mb-6">
-                <label htmlFor="overlay-reset-email" className="block mb-1.5 text-sm font-medium text-black">
+                <label htmlFor="overlay-reset-email" className="block mb-1.5 text-sm font-medium text-ink">
                   {t('forgotPassword.emailLabel')}
                 </label>
                 <input

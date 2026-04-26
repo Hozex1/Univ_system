@@ -2,6 +2,11 @@ import { Request, Response } from "express";
 import XLSX from "xlsx";
 import PDFDocument from "pdfkit";
 import {
+  registerArabicFonts,
+  resolveFont,
+  textOpts,
+} from "../../utils/arabic-pdf.util";
+import {
   registerUser,
   loginUser,
   refreshTokens,
@@ -956,6 +961,11 @@ export const exportAdminUsersPdfHandler = async (req: AuthRequest, res: Response
       bufferPages: true,
     });
 
+    // Register Arabic fonts so user names in Arabic render correctly.
+    // Place Amiri-Regular.ttf + Amiri-Bold.ttf in <backend>/assets/fonts/
+    // Download from https://fonts.google.com/specimen/Amiri
+    registerArabicFonts(pdf);
+
     pdf.pipe(res);
 
     const margin = 50;
@@ -1033,14 +1043,16 @@ export const exportAdminUsersPdfHandler = async (req: AuthRequest, res: Response
       const values = [row.fullName, String(row.id), row.department];
 
       values.forEach((value, valueIndex) => {
+        const cellFont = resolveFont(value);
+        const cellOpts = textOpts(value, {
+          width: columns[valueIndex].width - 16,
+          ellipsis: true,
+        });
         pdf
-          .font("Helvetica")
+          .font(cellFont)
           .fontSize(9)
           .fillColor("#1F2937")
-          .text(value, x + 8, rowY + 7, {
-            width: columns[valueIndex].width - 16,
-            ellipsis: true,
-          });
+          .text(value, x + 8, rowY + 7, cellOpts);
 
         x += columns[valueIndex].width;
       });

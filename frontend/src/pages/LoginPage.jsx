@@ -118,7 +118,7 @@ export default function LoginPage() {
             className="mx-auto mb-4 w-14 h-14 rounded-lg object-cover"
           />
           <h1 className="text-xl font-bold text-ink tracking-tight">{t('login.welcome')}</h1>
-          <p className="mt-1 text-sm text-black">
+          <p className="mt-1 text-sm text-ink-secondary">
             {t('login.subtitle')}
           </p>
         </div>
@@ -138,7 +138,7 @@ export default function LoginPage() {
 
           {/* Identifier */}
           <div className="mb-4">
-            <label htmlFor="identifier" className="block mb-1.5 text-sm font-medium text-black">
+            <label htmlFor="identifier" className="block mb-1.5 text-sm font-medium text-ink">
               {t('login.emailOrId')}
             </label>
             <input
@@ -157,7 +157,7 @@ export default function LoginPage() {
 
           {/* Password */}
           <div className="mb-4">
-            <label htmlFor="password" className="block mb-1.5 text-sm font-medium text-black">
+            <label htmlFor="password" className="block mb-1.5 text-sm font-medium text-ink">
               {t('login.password')}
             </label>
             <div className="relative">
@@ -195,7 +195,7 @@ export default function LoginPage() {
 
           {/* Remember / Forgot */}
           <div className="flex items-center justify-between mb-6">
-            <label className="flex items-center gap-2 text-sm text-black cursor-pointer select-none group">
+            <label className="flex items-center gap-2 text-sm text-ink cursor-pointer select-none group">
               <span
                 role="checkbox"
                 aria-checked={remember}

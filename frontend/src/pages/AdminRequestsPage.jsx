@@ -624,25 +624,20 @@ export default function AdminRequestsPage() {
                   )}
                 </div>
               </div>
-              {req.submitterSource !== 'guest' && (
+              {/* View Student Profile — only for authenticated submitters with a known userId */}
+              {req.submitterSource !== 'guest' && req.studentUserId ? (
                 <button
-                  onClick={() => navigate('/dashboard/profile', {
-                    state: {
-                      selectedStudentProfile: {
-                        name: req.studentName,
-                        studentId: req.studentId,
-                        department: req.department,
-                        studentEtudiantId: req.studentEtudiantId,
-                        studentUserId: req.studentUserId,
-                        source: 'requests-admin',
-                      },
-                    },
-                  })}
+                  onClick={() => navigate(`/admin/users/${req.studentUserId}`)}
                   className="w-full px-3 py-2 text-xs font-medium text-brand bg-brand/5 border border-edge-strong rounded-md hover:bg-brand/10 transition-colors duration-100 text-center"
                 >
                   View Student Profile
                 </button>
-              )}
+              ) : req.submitterSource === 'guest' ? (
+                <div className="w-full px-3 py-2 text-xs text-ink-muted bg-surface-200 border border-edge rounded-md text-center">
+                  <p className="font-medium">Guest submission</p>
+                  {req.guestEmail && <p className="mt-0.5">📧 {req.guestEmail}</p>}
+                </div>
+              ) : null}
             </div>
 
             {/* Request meta */}
