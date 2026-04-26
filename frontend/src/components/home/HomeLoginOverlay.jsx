@@ -126,7 +126,8 @@ export default function HomeLoginOverlay({ open, onClose }) {
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="relative my-auto w-full max-w-[420px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-surface/95 rounded-2xl shadow-2xl border border-edge"
+        className="relative my-auto w-full max-w-[420px] max-h-[calc(100vh-2rem)] overflow-y-auto bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-edge"
+        style={{ opacity: 1 }}
       >
         {/* Close button */}
         <button

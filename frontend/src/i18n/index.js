@@ -16,6 +16,9 @@ i18n
       en: { translation: en },
     },
     fallbackLng: 'fr',
+    // CRITICAL: Resources are inline objects — initialise synchronously so
+    // components never render with raw translation keys on first mount.
+    initImmediate: false,
     interpolation: {
       escapeValue: false,
     },

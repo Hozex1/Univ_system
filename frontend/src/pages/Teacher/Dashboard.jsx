@@ -196,6 +196,10 @@ export default function TeacherDashboard() {
 
     return (
       <div className="space-y-6 mt-6">
+
+        {/* ── Quick Access ──────────────────────────────────────────── */}
+        <QuickAccess navigate={navigate} hasPresident={hasPresidentMembership} />
+
         {/* KPI strip */}
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
           <KpiCard label="Supervised Students" value={summary?.supervisedStudents ?? 0} accent="brand" />
@@ -472,3 +476,128 @@ function ChartCard({ title, data, variant, color, palette, offset = 0 }) {
   );
 }
 
+/* ════════════════════════════════════════════════════════════
+   QUICK ACCESS COMPONENT
+   ════════════════════════════════════════════════════════════ */
+
+const QUICK_LINKS = [
+  {
+    id: 'news',
+    label: 'News & Announcements',
+    description: 'Latest university news, events and notices',
+    path: '/dashboard/actualites',
+    gradient: 'from-blue-500/10 to-indigo-500/10',
+    border: 'hover:border-blue-400/50',
+    iconBg: 'bg-blue-500/10 text-blue-500',
+    chevron: 'group-hover:text-blue-500',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M12 7.5h1.5m-1.5 3h1.5m-7.5 3h7.5m-7.5 3h7.5m3-9h3.375c.621 0 1.125.504 1.125 1.125V18a2.25 2.25 0 01-2.25 2.25M16.5 7.5V18a2.25 2.25 0 002.25 2.25M16.5 7.5V4.875c0-.621-.504-1.125-1.125-1.125H4.125C3.504 3.75 3 4.254 3 4.875V18a2.25 2.25 0 002.25 2.25h13.5M6 7.5h3v3H6v-3z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'conseil',
+    label: 'Disciplinary Council',
+    description: 'Manage disciplinary cases and committee reports',
+    path: '/dashboard/discipline/report',
+    gradient: 'from-orange-500/10 to-red-500/10',
+    border: 'hover:border-orange-400/50',
+    iconBg: 'bg-orange-500/10 text-orange-500',
+    chevron: 'group-hover:text-orange-500',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M12 3v17.25m0 0c-1.472 0-2.882.265-4.185.75M12 20.25c1.472 0 2.882.265 4.185.75M18.75 4.97A48.416 48.416 0 0012 4.5c-2.291 0-4.545.16-6.75.47m13.5 0c1.01.143 2.01.317 3 .52m-3-.52l2.62 10.726c.122.499-.106 1.028-.589 1.202a5.988 5.988 0 01-2.031.352 5.988 5.988 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L18.75 4.97zm-16.5.52c.99-.203 1.99-.377 3-.52m0 0l2.62 10.726c.122.499-.106 1.028-.59 1.202a5.989 5.989 0 01-2.031.352 5.989 5.989 0 01-2.031-.352c-.483-.174-.711-.703-.59-1.202L5.25 4.97z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'documents',
+    label: 'Document Requests',
+    description: 'Request and track official university documents',
+    path: '/dashboard/documents',
+    gradient: 'from-emerald-500/10 to-teal-500/10',
+    border: 'hover:border-emerald-400/50',
+    iconBg: 'bg-emerald-500/10 text-emerald-600',
+    chevron: 'group-hover:text-emerald-600',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z" />
+      </svg>
+    ),
+  },
+  {
+    id: 'remise',
+    label: 'Copy Submission',
+    description: 'Submit and manage corrected exam copies',
+    path: '/dashboard/remise-copies',
+    gradient: 'from-violet-500/10 to-purple-500/10',
+    border: 'hover:border-violet-400/50',
+    iconBg: 'bg-violet-500/10 text-violet-600',
+    chevron: 'group-hover:text-violet-600',
+    icon: (
+      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+        <path strokeLinecap="round" strokeLinejoin="round"
+          d="M7.5 7.5h-.75A2.25 2.25 0 004.5 9.75v7.5a2.25 2.25 0 002.25 2.25h7.5a2.25 2.25 0 002.25-2.25v-7.5a2.25 2.25 0 00-2.25-2.25h-.75m0-3l-3-3m0 0l-3 3m3-3v11.25m6-2.25h.75a2.25 2.25 0 012.25 2.25v7.5a2.25 2.25 0 01-2.25 2.25h-7.5a2.25 2.25 0 01-2.25-2.25v-.75" />
+      </svg>
+    ),
+  },
+];
+
+function QuickAccess({ navigate }) {
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <h2 className="text-sm font-semibold text-ink-tertiary uppercase tracking-wider">
+          Quick Access
+        </h2>
+        <div className="flex-1 h-px bg-edge" />
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+        {QUICK_LINKS.map((link) => (
+          <button
+            key={link.id}
+            type="button"
+            onClick={() => navigate(link.path)}
+            className={`
+              group relative flex flex-col items-start gap-3 p-4 rounded-xl
+              bg-gradient-to-br ${link.gradient}
+              border border-edge ${link.border}
+              shadow-sm hover:shadow-md
+              transition-all duration-200 ease-out
+              hover:-translate-y-0.5 active:translate-y-0
+              text-left w-full
+            `}
+          >
+            {/* Icon */}
+            <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${link.iconBg} transition-transform duration-200 group-hover:scale-110`}>
+              {link.icon}
+            </div>
+
+            {/* Text */}
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-semibold text-ink leading-tight truncate">
+                {link.label}
+              </p>
+              <p className="text-xs text-ink-tertiary mt-0.5 leading-snug line-clamp-2">
+                {link.description}
+              </p>
+            </div>
+
+            {/* Chevron */}
+            <svg
+              className={`w-4 h-4 text-ink-muted ${link.chevron} transition-all duration-200 group-hover:translate-x-0.5 self-end`}
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" />
+            </svg>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
