@@ -188,15 +188,15 @@ const waitForNodeImages = async (container) => {
 /* ── Status Configs ─────────────────────────────────────────── */
 
 const CASE_STATUS_CONFIG = {
-  pending:    { label: 'Pending Investigation', bg: 'bg-warning/50', text: 'text-warning', border: 'border-warning/50', dot: 'bg-warning' },
-  hearing:    { label: 'En instruction', bg: 'bg-brand/50', text: 'text-brand', border: 'border-brand/50', dot: 'bg-brand' },
-  sanctioned: { label: 'Sanction Applied', bg: 'bg-danger/50', text: 'text-danger', border: 'border-danger/50', dot: 'bg-danger' },
-  closed:     { label: 'Case Closed', bg: 'bg-success/50', text: 'text-success', border: 'border-success/50', dot: 'bg-success' },
+  pending:    { label: 'Pending Investigation', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning), transparent 85%)', text: 'text-warning', dot: 'bg-warning' },
+  hearing:    { label: 'En instruction', color: 'var(--color-brand)', bg: 'color-mix(in srgb, var(--color-brand), transparent 85%)', text: 'text-brand', dot: 'bg-brand' },
+  sanctioned: { label: 'Sanction Applied', color: 'var(--color-danger)', bg: 'color-mix(in srgb, var(--color-danger), transparent 85%)', text: 'text-danger', dot: 'bg-danger' },
+  closed:     { label: 'Case Closed', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success), transparent 85%)', text: 'text-success', dot: 'bg-success' },
 };
 
 const MEETING_STATUS_CONFIG = {
-  scheduled: { label: 'Scheduled', bg: 'bg-brand/50', text: 'text-brand', border: 'border-brand/50', dot: 'bg-brand' },
-  finalized: { label: 'Finalized', bg: 'bg-success/50', text: 'text-success', border: 'border-success/50', dot: 'bg-success' },
+  scheduled: { label: 'Scheduled', color: 'var(--color-brand)', bg: 'color-mix(in srgb, var(--color-brand), transparent 85%)', text: 'text-brand', dot: 'bg-brand' },
+  finalized: { label: 'Finalized', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success), transparent 85%)', text: 'text-success', dot: 'bg-success' },
 };
 
 const VIOLATION_TYPES = ['All', 'Plagiarism', 'Exam Fraud', 'Misconduct'];
@@ -699,7 +699,10 @@ function StatusBadge({ status, config }) {
   const cfg = config[status];
   if (!cfg) return null;
   return (
-    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${cfg.bg} ${cfg.text}`}>
+    <span 
+      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded ${cfg.text}`}
+      style={{ backgroundColor: cfg.bg }}
+    >
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -707,15 +710,21 @@ function StatusBadge({ status, config }) {
 }
 
 function StatCard({ label, value, icon, accent = 'brand' }) {
-  const accents = {
-    brand:   'bg-brand-light text-brand',
-    warning: 'bg-warning/50 text-warning',
-    danger:  'bg-danger/50 text-danger',
-    success: 'bg-success/50 text-success',
+  const accentConfigs = {
+    brand:   { bg: 'color-mix(in srgb, var(--color-brand), transparent 85%)', text: 'var(--color-brand)' },
+    warning: { bg: 'color-mix(in srgb, var(--color-warning), transparent 85%)', text: 'var(--color-warning)' },
+    success: { bg: 'color-mix(in srgb, var(--color-success), transparent 85%)', text: 'var(--color-success)' },
+    danger:  { bg: 'color-mix(in srgb, var(--color-danger), transparent 85%)', text: 'var(--color-danger)' },
   };
+
+  const cfg = accentConfigs[accent] || accentConfigs.brand;
+
   return (
     <div className="bg-surface rounded-lg border border-edge shadow-card p-5 flex items-center gap-4">
-      <div className={`w-10 h-10 rounded-lg ${accents[accent]} flex items-center justify-center shrink-0`}>
+      <div 
+        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+        style={{ backgroundColor: cfg.bg, color: cfg.text }}
+      >
         {icon}
       </div>
       <div>
@@ -793,9 +802,8 @@ function TeacherQuickReport({
               onFocus={() => setShowDropdown(true)}
               onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
               placeholder="Search by name or ID..."
-              className={`w-full px-3 py-2 text-sm bg-control-bg border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all ${
-                form.studentId ? 'border-success/50 ring-1 ring-success/20' : 'border-control-border'
-              }`}
+              className={`w-full px-3 py-2 text-sm bg-control-bg border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all ${form.studentId ? 'border-success/50 ring-1 ring-success/20' : 'border-control-border'
+                }`}
             />
             {searchInput && (
               <button
@@ -907,19 +915,19 @@ function TeacherQuickReport({
 /* ── Tab Definitions ────────────────────────────────────────── */
 
 const ADMIN_TABS = [
-  { id: 'cases',       label: 'Cases',       Icon: icons.folder },
-  { id: 'meetings',    label: 'Meetings',    Icon: icons.calendar },
+  { id: 'cases', label: 'Cases', Icon: icons.folder },
+  { id: 'meetings', label: 'Meetings', Icon: icons.calendar },
   { id: 'new-meeting', label: 'New Meeting', Icon: icons.plus },
 ];
 
 const TEACHER_TABS = [
-  { id: 'cases',    label: 'My Reports',  Icon: icons.folder },
+  { id: 'cases', label: 'My Reports', Icon: icons.folder },
   { id: 'meetings', label: 'My Meetings', Icon: icons.calendar },
 ];
 
 const PRESIDENT_TABS = [
-  { id: 'meetings',    label: 'Decision Meetings', Icon: icons.calendar },
-  { id: 'my-meetings', label: 'My Meetings',       Icon: icons.calendar },
+  { id: 'meetings', label: 'Decision Meetings', Icon: icons.calendar },
+  { id: 'my-meetings', label: 'My Meetings', Icon: icons.calendar },
 ];
 
 /* ═══════════════════════════════════════════════════════════════
@@ -1303,11 +1311,19 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
     <div className="space-y-6 min-w-0">
 
       {/* Confidential banner */}
-      <div className="flex items-center gap-3 rounded-lg border border-warning/50 bg-warning/50 px-4 py-3">
-        {icons.lock({ className: 'w-5 h-5 text-warning shrink-0' })}
+      <div 
+        className="flex items-center gap-4 rounded-xl px-5 py-4"
+        style={{ backgroundColor: 'color-mix(in srgb, var(--color-warning), transparent 85%)' }}
+      >
+        <div 
+          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
+          style={{ backgroundColor: 'color-mix(in srgb, var(--color-warning), transparent 80%)' }}
+        >
+          {icons.lock({ className: 'w-5 h-5 text-warning' })}
+        </div>
         <div>
-          <p className="text-sm font-medium text-warning">Restricted Access — Confidential Records</p>
-          <p className="mt-0.5 text-xs text-warning">
+          <p className="text-sm font-bold text-warning tracking-tight uppercase">Restricted Access — Confidential Records</p>
+          <p className="mt-0.5 text-[13px] text-ink-secondary leading-relaxed font-medium">
             This module contains sensitive disciplinary data. Access is logged and limited to authorized personnel only.
           </p>
         </div>
@@ -1378,11 +1394,10 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`px-4 py-1.5 rounded text-sm font-medium transition-all duration-150 flex items-center gap-2 focus:ring-2 focus:ring-brand/30 ${
-              activeTab === id
-                ? 'bg-brand text-surface shadow-sm'
-                : 'text-ink-secondary hover:text-ink hover:bg-surface-300/50'
-            }`}
+            className={`px-4 py-1.5 rounded text-sm font-medium transition-all duration-150 flex items-center gap-2 focus:ring-2 focus:ring-brand/30 ${activeTab === id
+              ? 'bg-brand text-surface shadow-sm'
+              : 'text-ink-secondary hover:text-ink hover:bg-surface-300/50'
+              }`}
           >
             <Icon className="w-4 h-4" />
             {label}
@@ -1460,14 +1475,14 @@ function AddCouncilMemberModal({ meetings = [], staff = [], onClose, onAdded }) 
     return (Array.isArray(staff) ? staff : [])
       .filter((member) => member && typeof member === 'object')
       .map((member) => {
-          const parsedId = Number(member.id);
-          const name = member.name || [member.prenom, member.nom].filter(Boolean).join(' ').trim();
+        const parsedId = Number(member.id);
+        const name = member.name || [member.prenom, member.nom].filter(Boolean).join(' ').trim();
 
-          return {
-            id: Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null,
-            name,
-            grade: member.grade || 'Teacher',
-          };
+        return {
+          id: Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null,
+          name,
+          grade: member.grade || 'Teacher',
+        };
       })
       .filter((teacher) => {
         if (!Number.isInteger(teacher.id) || teacher.id <= 0 || !teacher.name) return false;
@@ -1712,11 +1727,10 @@ function CasesTab({
             <button
               key={f.key}
               onClick={() => setFilterStatus(f.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${
-                filterStatus === f.key
-                  ? 'bg-brand text-surface shadow-sm'
-                  : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
-              }`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${filterStatus === f.key
+                ? 'bg-brand text-surface shadow-sm'
+                : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
+                }`}
             >
               {f.label}
             </button>
@@ -1880,11 +1894,10 @@ function MeetingsTab({ meetings, cases, filterStatus, setFilterStatus, search, s
             <button
               key={f.key}
               onClick={() => setFilterStatus(f.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${
-                filterStatus === f.key
-                  ? 'bg-brand text-surface shadow-sm'
-                  : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
-              }`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${filterStatus === f.key
+                ? 'bg-brand text-surface shadow-sm'
+                : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
+                }`}
             >
               {f.label}
             </button>
