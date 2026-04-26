@@ -22,14 +22,14 @@ function formatDate(value) {
 
 function Badge({ children, tone = 'neutral' }) {
   const tones = {
-    neutral: 'bg-gray-100 text-gray-700',
-    success: 'bg-emerald-100 text-emerald-700',
-    warning: 'bg-amber-100 text-amber-700',
-    danger: 'bg-rose-100 text-rose-700',
-    info: 'bg-blue-100 text-blue-700',
+    neutral: 'bg-ink-tertiary/10 text-ink-tertiary border border-edge-subtle',
+    success: 'bg-success/10 text-success border border-success/20',
+    warning: 'bg-warning/10 text-warning border border-warning/20',
+    danger:  'bg-danger/10 text-danger border border-danger/20',
+    info:    'bg-brand/10 text-brand border border-brand/20',
   };
   return (
-    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${tones[tone] || tones.neutral}`}>
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${tones[tone] || tones.neutral}`}>
       {children}
     </span>
   );
@@ -73,10 +73,10 @@ export default function TeacherHistoryPage({ endpoint = '/api/v1/history/teacher
   }), [data]);
 
   if (loading) {
-    return <div className="p-6 text-sm text-gray-500">Loading history…</div>;
+    return <div className="p-6 text-sm text-ink-tertiary">Loading history…</div>;
   }
   if (error) {
-    return <div className="p-6 text-sm text-rose-600">{error}</div>;
+    return <div className="p-6 text-sm text-danger">{error}</div>;
   }
 
   return (
@@ -89,19 +89,19 @@ export default function TeacherHistoryPage({ endpoint = '/api/v1/history/teacher
         </p>
       </header>
 
-      <nav className="flex gap-2 border-b border-gray-200">
+      <nav className="flex gap-2 border-b border-edge">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
             onClick={() => setTab(t.id)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            className={`px-4 py-2 text-sm font-semibold border-b-2 -mb-px transition-all duration-200 ${
               tab === t.id
-                ? 'border-blue-600 text-blue-700'
-                : 'border-transparent text-gray-500 hover:text-gray-700'
+                ? 'border-brand text-brand'
+                : 'border-transparent text-ink-tertiary hover:text-ink'
             }`}
           >
-            {t.label} <span className="ml-1 text-xs text-gray-400">({counts[t.id]})</span>
+            {t.label} <span className="ml-1 text-[10px] font-bold opacity-60">({counts[t.id]})</span>
           </button>
         ))}
       </nav>
@@ -116,7 +116,7 @@ export default function TeacherHistoryPage({ endpoint = '/api/v1/history/teacher
 }
 
 function EmptyRow({ label }) {
-  return <div className="text-sm text-gray-500 italic py-6">No {label} yet.</div>;
+  return <div className="text-sm text-ink-tertiary italic py-6">No {label} yet.</div>;
 }
 
 function ReportedStudents({ items }) {
@@ -133,15 +133,15 @@ function ReportedStudents({ items }) {
               {r.student?.matricule && <Badge tone="neutral">{r.student.matricule}</Badge>}
               <Badge tone={councilTone(r.councilStatus)}>council: {r.councilStatus}</Badge>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-ink-tertiary mt-1">
               {r.infraction?.nom_en || r.infraction?.nom_ar || 'Infraction'}
               {r.infraction?.gravite ? ` · ${r.infraction.gravite}` : ''}
             </p>
             {r.student?.email && (
-              <p className="text-xs text-gray-400">{r.student.email}</p>
+              <p className="text-xs text-ink-muted">{r.student.email}</p>
             )}
           </div>
-          <div className="text-right text-xs text-gray-500">
+          <div className="text-right text-xs text-ink-tertiary">
             Reported: {formatDate(r.dateSignal)}
             {r.council?.dateReunion && (
               <>
@@ -169,20 +169,20 @@ function PfeProjects({ items }) {
             <Badge tone="info">{p.status}</Badge>
             {p.typeProjet && <Badge tone="neutral">{p.typeProjet}</Badge>}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-ink-tertiary mt-1">
             {p.anneeUniversitaire || ''}
             {p.promo?.nom_ar ? ` · ${p.promo.nom_ar}` : ''}
             {p.promo?.section ? ` · section ${p.promo.section}` : ''}
           </p>
 
           {p.groups.length === 0 ? (
-            <p className="text-xs text-gray-500 italic mt-3">No group assigned yet.</p>
+            <p className="text-xs text-ink-tertiary italic mt-3">No group assigned yet.</p>
           ) : (
             <div className="mt-3 space-y-3">
               {p.groups.map((g) => (
-                <div key={g.id} className="rounded-md border border-gray-100 bg-gray-50 p-3">
+                <div key={g.id} className="rounded-xl border border-edge-subtle bg-canvas/40 p-3">
                   <div className="flex items-center gap-2 mb-2">
-                    <p className="text-sm font-medium text-gray-800">
+                    <p className="text-sm font-semibold text-ink">
                       {g.nom_en || g.nom_ar || `Group #${g.id}`}
                     </p>
                     {g.mention && <Badge tone="success">{g.mention}</Badge>}
@@ -193,8 +193,8 @@ function PfeProjects({ items }) {
                   </div>
                   <ul className="grid sm:grid-cols-2 gap-2">
                     {g.members.map((m) => (
-                      <li key={`${g.id}-${m.etudiantId}`} className="text-xs text-gray-700">
-                        <span className="font-medium">
+                      <li key={`${g.id}-${m.etudiantId}`} className="text-xs text-ink-secondary">
+                        <span className="font-medium text-ink">
                           {`${m.prenom || ''} ${m.nom || ''}`.trim() || 'Member'}
                         </span>
                         {m.matricule ? ` · ${m.matricule}` : ''}
@@ -223,7 +223,7 @@ function docStatusTone(status) {
 function TeacherDocuments({ items }) {
   if (!items.length) return <EmptyRow label="documents" />;
   return (
-    <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+    <ul className="divide-y divide-edge-subtle rounded-lg border border-edge bg-surface">
       {items.map((d) => (
         <li key={d.id} className="p-4">
           <div className="flex items-center gap-2">
@@ -233,12 +233,12 @@ function TeacherDocuments({ items }) {
             <Badge tone={docStatusTone(d.status)}>{d.status?.replace(/_/g, ' ')}</Badge>
             {d.typeDoc?.categorie && <Badge tone="neutral">{d.typeDoc.categorie}</Badge>}
           </div>
-          <p className="text-xs text-gray-500 mt-1">
+          <p className="text-xs text-ink-tertiary mt-1">
             Requested: {formatDate(d.dateDemande)}
             {d.dateTraitement ? ` · Processed: ${formatDate(d.dateTraitement)}` : ''}
           </p>
           {(d.description_en || d.description_ar) && (
-            <p className="text-sm text-gray-700 mt-2 line-clamp-3">
+            <p className="text-sm text-ink-secondary mt-2 line-clamp-3">
               {d.description_en || d.description_ar}
             </p>
           )}

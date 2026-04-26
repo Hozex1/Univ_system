@@ -13,9 +13,9 @@ const SESSIONS = [
 ];
 
 const STATUS_CONFIG = {
-  non_remis: { label: "Non remis",  cls: "bg-red-50 text-red-700 border-red-200",     dot: "bg-red-500" },
-  remis:     { label: "Remis",      cls: "bg-emerald-50 text-emerald-700 border-emerald-200", dot: "bg-emerald-500" },
-  en_retard: { label: "En retard",  cls: "bg-amber-50 text-amber-700 border-amber-200",  dot: "bg-amber-500" },
+  non_remis: { label: "Non remis",  cls: "bg-danger/10 text-danger border-danger/20",     dot: "bg-danger" },
+  remis:     { label: "Remis",      cls: "bg-success/10 text-success border-success/20", dot: "bg-success" },
+  en_retard: { label: "En retard",  cls: "bg-warning/10 text-warning border-warning/20",  dot: "bg-warning" },
 };
 
 // ─────────────────────────────────────────────────────────────
@@ -306,7 +306,7 @@ function TeacherView() {
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-blue-600 text-white text-xs font-bold">1</span>
             <h2 className="text-sm font-semibold text-ink uppercase tracking-wider">Informations de l'enseignant</h2>
             {!profileLoading && profile && (
-              <span className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-emerald-50 border border-emerald-200 px-2.5 py-1 text-xs text-emerald-700 font-medium">
+              <span className="ml-auto inline-flex items-center gap-1.5 rounded-xl bg-success/10 border border-success/20 px-2.5 py-1 text-xs text-success font-medium">
                 <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7"/></svg>
                 Pré-rempli
               </span>
@@ -416,11 +416,11 @@ function TeacherView() {
           </div>
           {tauxPresence !== null && (
             <div className="mt-3 flex flex-wrap gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-xl bg-blue-50 border border-blue-200 px-3 py-1.5 text-xs font-medium text-blue-700">
+              <span className="inline-flex items-center gap-1.5 rounded-xl bg-brand/10 border border-brand/20 px-3 py-1.5 text-xs font-medium text-brand">
                 Taux de présence : <strong className="ml-1">{tauxPresence}%</strong>
               </span>
               {tauxPresence < 70 && (
-                <span className="inline-flex items-center gap-1.5 rounded-xl bg-red-50 border border-red-200 px-3 py-1.5 text-xs font-medium text-red-700">
+                <span className="inline-flex items-center gap-1.5 rounded-xl bg-danger/10 border border-danger/20 px-3 py-1.5 text-xs font-medium text-danger">
                   ⚠ Taux faible
                 </span>
               )}
@@ -617,9 +617,9 @@ function AdminView() {
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {[
           { label: "Total",      value: stats.total,     color: "text-ink",         bg: "bg-surface" },
-          { label: "Non remis",  value: stats.non_remis, color: "text-red-600",     bg: "bg-red-50" },
-          { label: "Remis",      value: stats.remis,     color: "text-emerald-600", bg: "bg-emerald-50" },
-          { label: "En retard",  value: stats.en_retard, color: "text-amber-600",   bg: "bg-amber-50" },
+          { label: "Non remis",  value: stats.non_remis, color: "text-danger",      bg: "bg-danger/10" },
+          { label: "Remis",      value: stats.remis,     color: "text-success",     bg: "bg-success/10" },
+          { label: "En retard",  value: stats.en_retard, color: "text-warning",     bg: "bg-warning/10" },
         ].map((s) => (
           <div key={s.label} className={`rounded-2xl border border-edge ${s.bg} p-4`}>
             <p className="text-xs text-ink-secondary">{s.label}</p>
