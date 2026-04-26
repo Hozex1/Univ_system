@@ -1,0 +1,274 @@
+import React, { useCallback, useEffect, useState } from 'react';
+import { pfeAPI } from '../../services/pfe';
+
+const STATUS_BADGE = {
+  propose: 'bg-amber-100 text-amber-800 border border-amber-200',
+  valide: 'bg-emerald-100 text-emerald-800 border border-emerald-200',
+  reserve: 'bg-blue-100 text-blue-800 border border-blue-200',
+  affecte: 'bg-violet-100 text-violet-800 border border-violet-200',
+  termine: 'bg-slate-100 text-slate-600 border border-slate-200',
+};
+
+const TYPE_BADGE = {
+  recherche: 'bg-sky-100 text-sky-700',
+  application: 'bg-indigo-100 text-indigo-700',
+  etude: 'bg-teal-100 text-teal-700',
+  innovation: 'bg-purple-100 text-purple-700',
+};
+
+function Badge({ label, className }) {
+  return (
+    <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${className}`}>
+      {label}
+    </span>
+  );
+}
+
+function SubjectCard({ subject, isSelected, onSelect, busy }) {
+  const supervisorName = subject.enseignant?.user
+    ? `${subject.enseignant.user.prenom} ${subject.enseignant.user.nom}`.trim()
+    : '—';
+
+  return (
+    <article
+      className={`rounded-2xl border p-5 shadow-sm transition ${
+        isSelected
+          ? 'border-indigo-400 bg-indigo-50 ring-2 ring-indigo-300'
+          : 'border-slate-200 bg-white hover:border-slate-300'
+      }`}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-base font-semibold text-slate-900 truncate">
+            {subject.titre_ar || subject.titre_en || `Sujet #${subject.id}`}
+          </h3>
+          {subject.titre_en && subject.titre_en !== subject.titre_ar && (
+            <p className="mt-0.5 text-xs text-slate-500 italic truncate">{subject.titre_en}</p>
+          )}
+        </div>
+        <div className="flex flex-col items-end gap-1 shrink-0">
+          <Badge
+            label={subject.status}
+            className={STATUS_BADGE[subject.status] || 'bg-slate-100 text-slate-600'}
+          />
+          <Badge
+            label={subject.typeProjet || 'application'}
+            className={TYPE_BADGE[subject.typeProjet] || 'bg-slate-100 text-slate-600'}
+          />
+        </div>
+      </div>
+
+      {subject.description_ar && (
+        <p className="mt-3 text-sm text-slate-600 line-clamp-2">{subject.description_ar}</p>
+      )}
+
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+        <span>Supervisor: <strong className="text-slate-700">{supervisorName}</strong></span>
+        {subject.promo && (
+          <span>Promo: <strong className="text-slate-700">{subject.promo.nom_ar || subject.promo.nom_en}</strong></span>
+        )}
+        <span>Groups: <strong className="text-slate-700">{subject._count?.groupsPfe ?? 0}/{subject.maxGrps ?? 1}</strong></span>
+      </div>
+
+      <div className="mt-4">
+        {isSelected ? (
+          <span className="inline-flex items-center gap-1.5 rounded-xl bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white">
+            ✓ Your current selection
+          </span>
+        ) : (
+          <button
+            type="button"
+            onClick={() => onSelect(subject.id)}
+            disabled={busy || (subject._count?.groupsPfe ?? 0) >= (subject.maxGrps ?? 1)}
+            className="rounded-xl bg-slate-900 px-3 py-1.5 text-sm font-medium text-white transition hover:bg-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            {(subject._count?.groupsPfe ?? 0) >= (subject.maxGrps ?? 1) ? 'Full' : 'Select this PFE'}
+          </button>
+        )}
+      </div>
+    </article>
+  );
+}
+
+export default function MyProjects() {
+  const [subjects, setSubjects] = useState([]);
+  const [myGroup, setMyGroup] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [search, setSearch] = useState('');
+  const [searchInput, setSearchInput] = useState('');
+  const [page, setPage] = useState(1);
+  const [pagination, setPagination] = useState(null);
+
+  const fetchSubjects = useCallback(async (searchVal, pageVal) => {
+    try {
+      console.log('[MyProjects] Fetching subjects…');
+      const result = await pfeAPI.listSubjects({ search: searchVal || undefined, page: pageVal, limit: 12 });
+      setSubjects(Array.isArray(result.data) ? result.data : []);
+      setPagination(result.pagination || null);
+      console.log(`[MyProjects] Loaded ${result.data?.length} subjects`);
+    } catch (err) {
+      console.error('[MyProjects] listSubjects error:', err);
+      setError('Failed to load PFE subjects. Please try again.');
+    }
+  }, []);
+
+  const fetchMyGroup = useCallback(async () => {
+    try {
+      console.log('[MyProjects] Fetching my group…');
+      const result = await pfeAPI.getMyGroup();
+      setMyGroup(result.data?.group || null);
+    } catch (err) {
+      // Not in a group yet — not an error
+      setMyGroup(null);
+    }
+  }, []);
+
+  useEffect(() => {
+    const init = async () => {
+      setLoading(true);
+      await Promise.all([fetchSubjects('', 1), fetchMyGroup()]);
+      setLoading(false);
+    };
+    init();
+  }, [fetchSubjects, fetchMyGroup]);
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    setPage(1);
+    setSearch(searchInput);
+    fetchSubjects(searchInput, 1);
+  };
+
+  const handleSelect = async (sujetId) => {
+    setBusy(true);
+    setError('');
+    setSuccess('');
+    try {
+      console.log(`[MyProjects] Selecting sujetId=${sujetId}…`);
+      const result = await pfeAPI.selectSubject(sujetId);
+      setSuccess('PFE subject selected successfully!');
+      setMyGroup(result.data?.group || null);
+      // Refresh subject list to update group counts
+      await fetchSubjects(search, page);
+    } catch (err) {
+      console.error('[MyProjects] selectSubject error:', err);
+      setError(err?.message || 'Failed to select PFE subject. Please try again.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handlePageChange = (newPage) => {
+    setPage(newPage);
+    fetchSubjects(search, newPage);
+  };
+
+  const selectedSubjectId = myGroup?.sujetFinal?.id ?? myGroup?.sujetFinalId ?? null;
+
+  if (loading) {
+    return (
+      <div className="flex min-h-[40vh] items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-indigo-200 border-t-indigo-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <header className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Final Year Project</p>
+        <h1 className="mt-1 text-2xl font-bold text-slate-900">Choose Your PFE</h1>
+        <p className="mt-1 text-sm text-slate-600">Browse available topics and select the one you want to work on.</p>
+      </header>
+
+      {/* Current selection */}
+      {myGroup?.sujetFinal && (
+        <section className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Your current PFE</p>
+          <h2 className="mt-1 text-base font-bold text-indigo-900">
+            {myGroup.sujetFinal.titre_ar || myGroup.sujetFinal.titre_en}
+          </h2>
+          {myGroup.coEncadrant?.user && (
+            <p className="mt-1 text-sm text-indigo-700">
+              Supervisor: {myGroup.coEncadrant.user.prenom} {myGroup.coEncadrant.user.nom}
+            </p>
+          )}
+          <p className="mt-1 text-xs text-indigo-500">Group: {myGroup.nom_ar || myGroup.nom_en}</p>
+        </section>
+      )}
+
+      {/* Alerts */}
+      {error && (
+        <div className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+      )}
+      {success && (
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">{success}</div>
+      )}
+
+      {/* Search */}
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <input
+          type="text"
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
+          placeholder="Search by title or description…"
+          className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+        />
+        <button
+          type="submit"
+          className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700"
+        >
+          Search
+        </button>
+      </form>
+
+      {/* Subject list */}
+      {subjects.length === 0 ? (
+        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
+          No PFE subjects available at the moment.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {subjects.map((subject) => (
+            <SubjectCard
+              key={subject.id}
+              subject={subject}
+              isSelected={selectedSubjectId === subject.id}
+              onSelect={handleSelect}
+              busy={busy}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Pagination */}
+      {pagination && pagination.totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => handlePageChange(page - 1)}
+            disabled={page <= 1}
+            className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40"
+          >
+            Previous
+          </button>
+          <span className="text-sm text-slate-600">
+            Page {page} / {pagination.totalPages}
+          </span>
+          <button
+            type="button"
+            onClick={() => handlePageChange(page + 1)}
+            disabled={page >= pagination.totalPages}
+            className="rounded-xl border border-slate-300 px-3 py-1.5 text-sm disabled:opacity-40"
+          >
+            Next
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
