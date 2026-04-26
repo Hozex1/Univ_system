@@ -63,7 +63,7 @@ export default function StatCards({ data }) {
             {card.icon}
           </div>
           <div>
-            <p className="text-sm font-medium text-ink-muted">
+            <p className="text-sm font-medium text-ink-secondary">
               {card.title}
             </p>
             <p className="text-3xl font-bold text-ink mt-1">
@@ -75,4 +75,3 @@ export default function StatCards({ data }) {
     </div>
   );
 }
-

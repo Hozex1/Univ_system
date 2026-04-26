@@ -54,11 +54,11 @@ export default function NoteForm({ student, enseignementId, moduleConfig, onClos
         
         {/* Exam Field (Always required structurally) */}
         <div className="flex-1 min-w-[150px]">
-          <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{t('examNote')}</label>
+          <label className="block text-xs font-bold text-ink-tertiary uppercase tracking-widest mb-2">{t('examNote')}</label>
           <input 
             type="number" step="0.01" min="0" max="20" required
             value={exam} onChange={(e) => setExam(e.target.value)}
-            className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
+            className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
             placeholder="0.00 - 20.00"
           />
         </div>
@@ -66,11 +66,11 @@ export default function NoteForm({ student, enseignementId, moduleConfig, onClos
         {/* TD Field */}
         {moduleConfig.hasTd && (
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{t('tdNote')}</label>
+            <label className="block text-xs font-bold text-ink-tertiary uppercase tracking-widest mb-2">{t('tdNote')}</label>
             <input 
               type="number" step="0.01" min="0" max="20"
               value={td} onChange={(e) => setTd(e.target.value)}
-              className="w-full border border-control-border border-control-border bg-slate-50 dark:bg-slate-900 rounded-lg p-2.5 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
               placeholder="0.00 - 20.00"
             />
           </div>
@@ -79,11 +79,11 @@ export default function NoteForm({ student, enseignementId, moduleConfig, onClos
         {/* TP Field */}
         {moduleConfig.hasTp && (
           <div className="flex-1 min-w-[150px]">
-            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest mb-2">{t('tpNote')}</label>
+            <label className="block text-xs font-bold text-ink-tertiary uppercase tracking-widest mb-2">{t('tpNote')}</label>
             <input 
               type="number" step="0.01" min="0" max="20"
               value={tp} onChange={(e) => setTp(e.target.value)}
-              className="w-full border border-control-border border-control-border bg-slate-50 dark:bg-slate-900 rounded-lg p-2.5 text-slate-800 dark:text-white outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand transition-colors"
               placeholder="0.00 - 20.00"
             />
           </div>
@@ -100,7 +100,7 @@ export default function NoteForm({ student, enseignementId, moduleConfig, onClos
           <button 
             type="submit" 
             disabled={loading}
-            className="flex-1 py-2.5 px-6 bg-brand hover:bg-brand-hover text-surface font-bold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+            className="flex-1 py-2.5 px-6 bg-brand hover:bg-brand-hover text-white font-bold rounded-lg shadow-sm transition-colors disabled:opacity-50"
           >
             {loading ? '...' : t('save')}
           </button>

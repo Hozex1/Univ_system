@@ -84,8 +84,8 @@ export default function StudentHistoryPage({ endpoint = '/api/v1/history/student
   return (
     <div className="p-6 space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-gray-900">My History</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-semibold text-ink">My History</h1>
+        <p className="text-sm text-ink-tertiary mt-1">
           {data?.user?.prenom} {data?.user?.nom}
           {data?.user?.matricule ? ` · ${data.user.matricule}` : ''}
         </p>
@@ -126,12 +126,12 @@ function EmptyRow({ label }) {
 function DisciplinaryList({ items }) {
   if (!items.length) return <EmptyRow label="disciplinary cases" />;
   return (
-    <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+    <ul className="divide-y divide-edge-subtle rounded-lg border border-edge bg-surface">
       {items.map((d) => (
         <li key={d.id} className="p-4 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-ink">
                 {d.infraction?.nom_en || d.infraction?.nom_ar || 'Infraction'}
               </p>
               <Badge tone={statusTone(d.status)}>{d.status}</Badge>
@@ -171,7 +171,7 @@ function ReclamationsList({ items }) {
       {items.map((r) => (
         <li key={r.id} className="p-4">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-ink">
               {r.objet_en || r.objet_ar || 'Reclamation'}
             </p>
             <Badge tone={statusTone(r.status)}>{r.status}</Badge>
@@ -196,7 +196,7 @@ function JustificationsList({ items }) {
       {items.map((j) => (
         <li key={j.id} className="p-4">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-ink">
               {j.motif_en || j.motif_ar || 'Absence'}
             </p>
             <Badge tone={statusTone(j.status)}>{j.status}</Badge>

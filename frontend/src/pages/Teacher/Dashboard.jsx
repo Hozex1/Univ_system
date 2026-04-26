@@ -232,7 +232,7 @@ export default function TeacherDashboard() {
       </div>
 
       <div className="bg-surface rounded-lg border border-edge shadow-card overflow-hidden">
-        <h3 className="p-6 text-lg font-bold border-b border-edge">My Supervised PFE Groups</h3>
+        <h3 className="p-6 text-lg font-bold text-ink border-b border-edge">My Supervised PFE Groups</h3>
         <table className="w-full text-left border-collapse">
           <thead className="bg-edge/20 text-ink-secondary text-sm">
             <tr>
@@ -443,7 +443,7 @@ function ChartCard({ title, data, variant, color, palette, offset = 0 }) {
 
   return (
     <div className="bg-surface rounded-lg border border-edge shadow-card p-6">
-      {title && <h3 className="text-base font-semibold mb-4">{title}</h3>}
+      {title && <h3 className="text-base font-semibold text-ink mb-4">{title}</h3>}
       <div className="h-64">
         {isEmpty ? (
           <div className="h-full flex items-center justify-center text-sm text-ink-tertiary">
@@ -452,22 +452,72 @@ function ChartCard({ title, data, variant, color, palette, offset = 0 }) {
         ) : variant === 'pie' ? (
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
-              <Pie data={data} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+            <Pie 
+                data={data} 
+                dataKey="value" 
+                nameKey="name" 
+                cx="50%" 
+                cy="50%" 
+                innerRadius={60}
+                outerRadius={80} 
+                paddingAngle={5}
+                label={{ fill: 'var(--color-ink)', fontSize: 11 }}
+              >
                 {data.map((_, i) => (
-                  <Cell key={`cell-${i}`} fill={(palette || CHART_PALETTE)[(i + offset) % (palette || CHART_PALETTE).length]} />
+                  <Cell 
+                    key={`cell-${i}`} 
+                    fill={(palette || CHART_PALETTE)[(i + offset) % (palette || CHART_PALETTE).length]} 
+                    stroke="var(--color-surface)"
+                    strokeWidth={2}
+                  />
                 ))}
               </Pie>
-              <Tooltip />
-              <Legend />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'var(--color-surface)', 
+                  borderColor: 'var(--color-edge)',
+                  color: 'var(--color-ink)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+              />
+              <Legend wrapperStyle={{ paddingTop: '10px', fontSize: '11px', color: 'var(--color-ink)' }} />
             </PieChart>
           </ResponsiveContainer>
         ) : (
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={data}>
-              <XAxis dataKey="name" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="value" fill={color || '#00C49F'} />
+            <BarChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <XAxis 
+                dataKey="name" 
+                stroke="var(--color-ink-tertiary)" 
+                fontSize={11}
+                tick={{ fill: 'var(--color-ink-secondary)' }}
+                axisLine={{ stroke: 'var(--color-edge)' }}
+              />
+              <YAxis 
+                stroke="var(--color-ink-tertiary)" 
+                fontSize={11}
+                tick={{ fill: 'var(--color-ink-secondary)' }}
+                axisLine={{ stroke: 'var(--color-edge)' }}
+              />
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: 'var(--color-surface)', 
+                  borderColor: 'var(--color-edge)',
+                  color: 'var(--color-ink)',
+                  borderRadius: '8px',
+                  fontSize: '12px',
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                }}
+                itemStyle={{ color: 'var(--color-ink)' }}
+              />
+              <Bar 
+                dataKey="value" 
+                fill={color || 'var(--color-brand)'} 
+                radius={[6, 6, 0, 0]} 
+                barSize={32}
+              />
             </BarChart>
           </ResponsiveContainer>
         )}
@@ -551,7 +601,7 @@ function QuickAccess({ navigate }) {
   return (
     <div>
       <div className="flex items-center gap-2 mb-3">
-        <h2 className="text-sm font-semibold text-ink-tertiary uppercase tracking-wider">
+        <h2 className="text-sm font-semibold text-ink uppercase tracking-wider">
           Quick Access
         </h2>
         <div className="flex-1 h-px bg-edge" />

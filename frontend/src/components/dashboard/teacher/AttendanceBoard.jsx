@@ -64,7 +64,7 @@ function AttendanceRow({ student, enseignementId, selectedDate, onAttendanceMark
             onClick={() => handleMark(true, false)}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-brand/30 ${
               status === 'Present' 
-                ? 'bg-success text-surface border-success shadow-soft' 
+                ? 'bg-success text-white border-success shadow-soft' 
                 : 'bg-surface text-success border-success/30 hover:bg-success/10'
             }`}
           >
@@ -74,7 +74,7 @@ function AttendanceRow({ student, enseignementId, selectedDate, onAttendanceMark
             onClick={() => handleMark(false, false)}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-brand/30 ${
               status === 'Unjustified' 
-                ? 'bg-danger text-surface border-danger shadow-soft' 
+                ? 'bg-danger text-white border-danger shadow-soft' 
                 : 'bg-surface text-danger border-edge-strong hover:bg-danger/10'
             }`}
           >
@@ -84,7 +84,7 @@ function AttendanceRow({ student, enseignementId, selectedDate, onAttendanceMark
             onClick={() => handleMark(false, true)}
             className={`px-3 py-1.5 rounded-md text-xs font-medium transition-all duration-150 border focus:outline-none focus:ring-2 focus:ring-brand/30 ${
               status === 'Justified' 
-                ? 'bg-warning text-surface border-warning shadow-soft' 
+                ? 'bg-warning text-white border-warning shadow-soft' 
                 : 'bg-surface text-warning border-warning/30 hover:bg-warning/10'
             }`}
           >

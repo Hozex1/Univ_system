@@ -33,7 +33,7 @@ export default function ProfileHeader({ profile }) {
               event.currentTarget.src = defaultAvatar;
             }}
           />
-          <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-2 border-white rounded-full"></div>
+          <div className="absolute bottom-1 right-1 w-5 h-5 bg-green-500 border-2 border-surface rounded-full"></div>
         </div>
         
         <div className="flex flex-col">

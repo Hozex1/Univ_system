@@ -82,8 +82,8 @@ export default function TeacherHistoryPage({ endpoint = '/api/v1/history/teacher
   return (
     <div className="p-6 space-y-6">
       <header>
-        <h1 className="text-2xl font-semibold text-gray-900">My History</h1>
-        <p className="text-sm text-gray-500 mt-1">
+        <h1 className="text-2xl font-semibold text-ink">My History</h1>
+        <p className="text-sm text-ink-tertiary mt-1">
           {data?.user?.prenom} {data?.user?.nom}
           {data?.user?.grade ? ` · ${data.user.grade.nom_en || data.user.grade.nom_ar}` : ''}
         </p>
@@ -122,12 +122,12 @@ function EmptyRow({ label }) {
 function ReportedStudents({ items }) {
   if (!items.length) return <EmptyRow label="reported students" />;
   return (
-    <ul className="divide-y divide-gray-100 rounded-lg border border-gray-200 bg-white">
+    <ul className="divide-y divide-edge-subtle rounded-lg border border-edge bg-surface">
       {items.map((r) => (
         <li key={r.dossierId} className="p-4 flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <p className="text-sm font-medium text-gray-900">
+              <p className="text-sm font-medium text-ink">
                 {r.student ? `${r.student.prenom || ''} ${r.student.nom || ''}`.trim() : 'Student'}
               </p>
               {r.student?.matricule && <Badge tone="neutral">{r.student.matricule}</Badge>}
@@ -161,9 +161,9 @@ function PfeProjects({ items }) {
   return (
     <ul className="space-y-4">
       {items.map((p) => (
-        <li key={p.id} className="rounded-lg border border-gray-200 bg-white p-4">
+        <li key={p.id} className="rounded-lg border border-edge bg-surface p-4">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-ink">
               {p.titre_en || p.titre_ar}
             </p>
             <Badge tone="info">{p.status}</Badge>
@@ -227,7 +227,7 @@ function TeacherDocuments({ items }) {
       {items.map((d) => (
         <li key={d.id} className="p-4">
           <div className="flex items-center gap-2">
-            <p className="text-sm font-medium text-gray-900">
+            <p className="text-sm font-medium text-ink">
               {d.typeDoc?.nom_en || d.typeDoc?.nom_ar || 'Document request'}
             </p>
             <Badge tone={docStatusTone(d.status)}>{d.status?.replace(/_/g, ' ')}</Badge>

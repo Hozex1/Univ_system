@@ -33,17 +33,17 @@ function SubjectCard({ subject, isSelected, onSelect, busy }) {
     <article
       className={`rounded-2xl border p-5 shadow-sm transition ${
         isSelected
-          ? 'border-indigo-400 bg-indigo-50 ring-2 ring-indigo-300'
-          : 'border-slate-200 bg-white hover:border-slate-300'
+          ? 'border-brand bg-brand/5 ring-2 ring-brand/20'
+          : 'border-edge bg-surface hover:border-edge-strong'
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <h3 className="text-base font-semibold text-slate-900 truncate">
+          <h3 className="text-base font-semibold text-ink truncate">
             {subject.titre_ar || subject.titre_en || `Sujet #${subject.id}`}
           </h3>
           {subject.titre_en && subject.titre_en !== subject.titre_ar && (
-            <p className="mt-0.5 text-xs text-slate-500 italic truncate">{subject.titre_en}</p>
+            <p className="mt-0.5 text-xs text-ink-tertiary italic truncate">{subject.titre_en}</p>
           )}
         </div>
         <div className="flex flex-col items-end gap-1 shrink-0">
@@ -59,15 +59,15 @@ function SubjectCard({ subject, isSelected, onSelect, busy }) {
       </div>
 
       {subject.description_ar && (
-        <p className="mt-3 text-sm text-slate-600 line-clamp-2">{subject.description_ar}</p>
+        <p className="mt-3 text-sm text-ink-secondary line-clamp-2">{subject.description_ar}</p>
       )}
 
-      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
-        <span>Supervisor: <strong className="text-slate-700">{supervisorName}</strong></span>
+      <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-ink-tertiary">
+        <span>Supervisor: <strong className="text-ink-secondary">{supervisorName}</strong></span>
         {subject.promo && (
-          <span>Promo: <strong className="text-slate-700">{subject.promo.nom_ar || subject.promo.nom_en}</strong></span>
+          <span>Promo: <strong className="text-ink-secondary">{subject.promo.nom_ar || subject.promo.nom_en}</strong></span>
         )}
-        <span>Groups: <strong className="text-slate-700">{subject._count?.groupsPfe ?? 0}/{subject.maxGrps ?? 1}</strong></span>
+        <span>Groups: <strong className="text-ink-secondary">{subject._count?.groupsPfe ?? 0}/{subject.maxGrps ?? 1}</strong></span>
       </div>
 
       <div className="mt-4">
@@ -179,25 +179,25 @@ export default function MyProjects() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <header className="rounded-3xl border border-slate-200 bg-gradient-to-br from-slate-50 via-white to-indigo-50 p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-widest text-slate-500">Final Year Project</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900">Choose Your PFE</h1>
-        <p className="mt-1 text-sm text-slate-600">Browse available topics and select the one you want to work on.</p>
+      <header className="rounded-3xl border border-edge bg-surface p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-widest text-ink-tertiary">Final Year Project</p>
+        <h1 className="mt-1 text-2xl font-bold text-ink">Choose Your PFE</h1>
+        <p className="mt-1 text-sm text-ink-secondary">Browse available topics and select the one you want to work on.</p>
       </header>
 
       {/* Current selection */}
       {myGroup?.sujetFinal && (
-        <section className="rounded-2xl border border-indigo-200 bg-indigo-50 p-5">
-          <p className="text-xs font-semibold uppercase tracking-widest text-indigo-600">Your current PFE</p>
-          <h2 className="mt-1 text-base font-bold text-indigo-900">
+        <section className="rounded-2xl border border-brand bg-brand/5 p-5">
+          <p className="text-xs font-semibold uppercase tracking-widest text-brand">Your current PFE</p>
+          <h2 className="mt-1 text-base font-bold text-ink">
             {myGroup.sujetFinal.titre_ar || myGroup.sujetFinal.titre_en}
           </h2>
           {myGroup.coEncadrant?.user && (
-            <p className="mt-1 text-sm text-indigo-700">
+            <p className="mt-1 text-sm text-ink-secondary">
               Supervisor: {myGroup.coEncadrant.user.prenom} {myGroup.coEncadrant.user.nom}
             </p>
           )}
-          <p className="mt-1 text-xs text-indigo-500">Group: {myGroup.nom_ar || myGroup.nom_en}</p>
+          <p className="mt-1 text-xs text-ink-tertiary">Group: {myGroup.nom_ar || myGroup.nom_en}</p>
         </section>
       )}
 
@@ -216,7 +216,7 @@ export default function MyProjects() {
           value={searchInput}
           onChange={(e) => setSearchInput(e.target.value)}
           placeholder="Search by title or description…"
-          className="flex-1 rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm focus:border-indigo-400 focus:outline-none"
+          className="flex-1 rounded-xl border border-control-border bg-surface px-4 py-2 text-sm text-ink focus:border-brand focus:outline-none"
         />
         <button
           type="submit"
@@ -228,7 +228,7 @@ export default function MyProjects() {
 
       {/* Subject list */}
       {subjects.length === 0 ? (
-        <div className="rounded-2xl border border-slate-200 bg-slate-50 p-10 text-center text-sm text-slate-500">
+        <div className="rounded-2xl border border-edge bg-surface-200 p-10 text-center text-sm text-ink-tertiary">
           No PFE subjects available at the moment.
         </div>
       ) : (
