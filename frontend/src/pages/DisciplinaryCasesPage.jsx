@@ -2020,15 +2020,15 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
 
           return {
             id: Number.isInteger(parsedId) && parsedId > 0 ? parsedId : fallbackId,
-            name: name || `Staff #${fallbackId}`,
-            grade: member.grade || 'Staff',
+            name: name || `Teacher #${fallbackId}`,
+            grade: member.grade || 'Teacher',
           };
         }
 
         return {
           id: index + 1,
-          name: String(member || `Staff #${index + 1}`),
-          grade: 'Staff',
+          name: String(member || `Teacher #${index + 1}`),
+          grade: 'Teacher',
         };
       })
       .filter((member) => {
