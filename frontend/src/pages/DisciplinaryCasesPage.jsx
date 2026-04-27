@@ -14,10 +14,6 @@ import CaseDetailPage from './CaseDetailPage';
 import StudentDisciplinaryView from './StudentDisciplinaryView';
 import request from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
-import {
-  normalizeCase as adapterNormalizeCase,
-  normalizeMeeting as adapterNormalizeMeeting,
-} from '../services/disciplineAdapter';
 
 /* ── Inline SVG Icons (stroke 1.5) ─────────────────────────── */
 
@@ -188,22 +184,19 @@ const waitForNodeImages = async (container) => {
 /* ── Status Configs ─────────────────────────────────────────── */
 
 const CASE_STATUS_CONFIG = {
-  pending:    { label: 'Pending Investigation', color: 'var(--color-warning)', bg: 'color-mix(in srgb, var(--color-warning), transparent 85%)', text: 'text-warning', dot: 'bg-warning' },
-  hearing:    { label: 'En instruction', color: 'var(--color-brand)', bg: 'color-mix(in srgb, var(--color-brand), transparent 85%)', text: 'text-brand', dot: 'bg-brand' },
-  sanctioned: { label: 'Sanction Applied', color: 'var(--color-danger)', bg: 'color-mix(in srgb, var(--color-danger), transparent 85%)', text: 'text-danger', dot: 'bg-danger' },
-  closed:     { label: 'Case Closed', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success), transparent 85%)', text: 'text-success', dot: 'bg-success' },
+  pending:    { label: 'Pending Investigation', bg: 'bg-warning/10', text: 'text-warning', border: 'border-warning/30', dot: 'bg-warning' },
+  hearing:    { label: 'En instruction', bg: 'bg-brand-light', text: 'text-brand', border: 'border-edge-strong', dot: 'bg-brand' },
+  sanctioned: { label: 'Sanction Applied', bg: 'bg-danger/10', text: 'text-danger', border: 'border-edge-strong', dot: 'bg-danger' },
+  closed:     { label: 'Case Closed', bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success' },
 };
 
 const MEETING_STATUS_CONFIG = {
-  scheduled: { label: 'Scheduled', color: 'var(--color-brand)', bg: 'color-mix(in srgb, var(--color-brand), transparent 85%)', text: 'text-brand', dot: 'bg-brand' },
-  finalized: { label: 'Finalized', color: 'var(--color-success)', bg: 'color-mix(in srgb, var(--color-success), transparent 85%)', text: 'text-success', dot: 'bg-success' },
+  scheduled: { label: 'Scheduled', bg: 'bg-brand-light', text: 'text-brand', border: 'border-edge-strong', dot: 'bg-brand' },
+  finalized: { label: 'Finalized', bg: 'bg-success/10', text: 'text-success', border: 'border-success/30', dot: 'bg-success' },
 };
 
 const VIOLATION_TYPES = ['All', 'Plagiarism', 'Exam Fraud', 'Misconduct'];
-// Must mirror MIN/MAX_ADDITIONAL_COUNCIL_MEMBERS in backend validators —
-// council requires exactly 2 additional members on top of president + rapporteur.
-const MAX_ADDITIONAL_MEMBER_COUNT = 2;
-const REQUIRED_ADDITIONAL_MEMBER_COUNT = 2;
+const MAX_ADDITIONAL_MEMBER_COUNT = 3;
 
 /* ── Helpers ────────────────────────────────────────────────── */
 
@@ -686,12 +679,152 @@ async function downloadMeetingFormPdf({
   }
 }
 
-// Delegates to the shared adapter. Kept as a local reference so all
-// existing call sites in this file continue to work unchanged.
-const normalizeCase = adapterNormalizeCase;
+function normalizeCase(rawCase) {
+  if (!rawCase) return null;
 
-// Delegates to the shared adapter.
-const normalizeMeeting = adapterNormalizeMeeting;
+  const statusMap = {
+    signale: 'pending',
+    en_instruction: 'hearing',
+    jugement: 'hearing',
+    traite: 'closed',
+  };
+
+  const etudiant = rawCase.etudiant || {};
+  const user = etudiant.user || {};
+  const caseId = rawCase.id;
+  const normalizedId = typeof caseId === 'string' && caseId.startsWith('CASE-')
+    ? caseId
+    : `CASE-${caseId}`;
+  const dateSignal = rawCase.dateSignal || rawCase.dateReported || rawCase.createdAt || new Date().toISOString();
+  const description = rawCase.descriptionSignal_ar || rawCase.descriptionSignal_en || rawCase.descriptionSignal || rawCase.description || '';
+  const infractionLabel = rawCase.infraction?.nom_en || rawCase.infraction?.nom_ar || rawCase.violationType || 'Misconduct';
+  const graviteLabel = rawCase.infraction?.gravite
+    ? rawCase.infraction.gravite === 'tres_grave'
+      ? 'Très grave'
+      : rawCase.infraction.gravite.charAt(0).toUpperCase() + rawCase.infraction.gravite.slice(1)
+    : '';
+  const infractionName = graviteLabel ? `${infractionLabel} (${graviteLabel})` : infractionLabel;
+  const reporterName = rawCase.reporterName
+    || [rawCase.enseignantSignalantR?.user?.prenom, rawCase.enseignantSignalantR?.user?.nom].filter(Boolean).join(' ').trim()
+    || null;
+  const reporterEnseignantId = Number(rawCase.reporterEnseignantId ?? rawCase.enseignantSignalant ?? rawCase.enseignantSignalantR?.id);
+
+  return {
+    ...rawCase,
+    rawId: typeof caseId === 'number' ? caseId : undefined,
+    studentEtudiantId: etudiant.id || rawCase.studentEtudiantId || null,
+    studentUserId: user.id || rawCase.studentUserId || null,
+    id: normalizedId,
+    status: statusMap[rawCase.status] || rawCase.status || 'pending',
+    studentName: rawCase.studentName || [user.prenom, user.nom].filter(Boolean).join(' ').trim() || 'Unknown student',
+    studentId: rawCase.studentId || etudiant.matricule || '-',
+    department: rawCase.department || '-',
+    violationType: infractionName,
+    description,
+    reporterName,
+    reporterEnseignantId: Number.isInteger(reporterEnseignantId) && reporterEnseignantId > 0 ? reporterEnseignantId : null,
+    dateReported: dateSignal,
+    dateOfIncident: rawCase.dateOfIncident || dateSignal,
+    timeline: Array.isArray(rawCase.timeline) && rawCase.timeline.length > 0
+      ? rawCase.timeline
+      : [
+          {
+            event: 'Report Submitted',
+            date: dateSignal,
+            detail: description || `Case reported for ${infractionName}.`,
+            by: reporterName || 'Teacher',
+          },
+        ],
+    evidenceFiles: Array.isArray(rawCase.evidenceFiles) ? rawCase.evidenceFiles : [],
+    decision: rawCase.decision
+      ? {
+          verdict: rawCase.decision.verdict || rawCase.decision.nom_en || rawCase.decision.nom_ar || rawCase.decision.nom || '',
+          details: rawCase.remarqueDecision || rawCase.decision.details || rawCase.decision.description || '',
+          date: rawCase.dateDecision || rawCase.updatedAt || rawCase.createdAt || new Date().toISOString(),
+          issuedBy: 'Disciplinary council',
+        }
+      : rawCase.decision || null,
+  };
+}
+
+function normalizeMeeting(rawMeeting) {
+  if (!rawMeeting) return null;
+
+  const meetingId = rawMeeting.id;
+  const normalizedId = typeof meetingId === 'string' && meetingId.startsWith('MEET-')
+    ? meetingId
+    : `MEET-${meetingId}`;
+
+  const rawConseilId = typeof meetingId === 'number'
+    ? meetingId
+    : Number(String(meetingId).replace('MEET-', ''));
+
+  const memberEntries = Array.isArray(rawMeeting.membres)
+    ? rawMeeting.membres
+        .map((m) => {
+          const enseignantId = Number(m.enseignant?.id ?? m.enseignantId);
+          const name = [m.enseignant?.user?.prenom, m.enseignant?.user?.nom].filter(Boolean).join(' ').trim();
+          const hasEnseignantId = Number.isInteger(enseignantId) && enseignantId > 0;
+
+          return {
+            id: Number.isInteger(Number(m.id)) ? Number(m.id) : null,
+            enseignantId: hasEnseignantId ? enseignantId : null,
+            role: m.role || 'membre',
+            name: name || (hasEnseignantId ? `Teacher #${enseignantId}` : (m.role === 'rapporteur' ? 'Reporter' : 'Member')),
+          };
+        })
+        .filter((member) => Boolean(member.name))
+    : [];
+
+  const participants = Array.isArray(rawMeeting.participants)
+    ? rawMeeting.participants
+    : memberEntries.map((member) => member.name).filter(Boolean);
+
+  const caseIds = Array.isArray(rawMeeting.caseIds)
+    ? rawMeeting.caseIds
+    : Array.isArray(rawMeeting.dossiers)
+      ? rawMeeting.dossiers.map((d) => `CASE-${d.id}`)
+      : [];
+
+  // Extract decision from the first dossier that has one (all should have same decision in a meeting)
+  const decisionsInMeeting = Array.isArray(rawMeeting.dossiers)
+    ? rawMeeting.dossiers
+        .map((d) => d.decision)
+        .filter(Boolean)
+    : [];
+  
+  const firstDecision = decisionsInMeeting[0];
+  const decisionText = firstDecision 
+    ? (firstDecision.verdict || firstDecision.nom_en || firstDecision.nom_ar || '')
+    : null;
+
+  const presidentMember = memberEntries.find((m) => m.role === 'president') || null;
+  const reporterMember = memberEntries.find((m) => m.role === 'rapporteur') || null;
+  const presidentEnseignantId = presidentMember?.enseignantId ?? null;
+  const membreIds = memberEntries.map(m => String(m.enseignantId)).filter(Boolean);
+
+  return {
+    ...rawMeeting,
+    id: normalizedId,
+    conseilId: Number.isFinite(rawConseilId) ? rawConseilId : null,
+    title: rawMeeting.title || 'Conseil disciplinaire',
+    agenda: rawMeeting.agenda || rawMeeting.description_en || rawMeeting.description_ar || '',
+    date: rawMeeting.date || rawMeeting.dateReunion || new Date().toISOString(),
+    time: rawMeeting.time || (rawMeeting.heure ? new Date(rawMeeting.heure).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'),
+    location: rawMeeting.location || rawMeeting.lieu || 'TBD',
+    status: rawMeeting.status === 'planifie' ? 'scheduled' : rawMeeting.status === 'termine' ? 'finalized' : (rawMeeting.status || 'scheduled'),
+    participants,
+    memberEntries,
+    membres: memberEntries,
+    membreIds,
+    caseIds,
+    decision: decisionText,
+    dossiers: Array.isArray(rawMeeting.dossiers) ? rawMeeting.dossiers : [],
+    presidentEnseignantId,
+    rapporteurEnseignantId: reporterMember?.enseignantId ?? null,
+    reporterEnseignantId: reporterMember?.enseignantId ?? null,
+  };
+}
 
 /* ── Shared Sub-components ──────────────────────────────────── */
 
@@ -699,10 +832,7 @@ function StatusBadge({ status, config }) {
   const cfg = config[status];
   if (!cfg) return null;
   return (
-    <span 
-      className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-semibold rounded ${cfg.text}`}
-      style={{ backgroundColor: cfg.bg }}
-    >
+    <span className={`inline-flex items-center gap-1.5 px-2 py-0.5 text-[11px] font-medium rounded ${cfg.bg} ${cfg.text}`}>
       <span className={`w-1.5 h-1.5 rounded-full ${cfg.dot}`} />
       {cfg.label}
     </span>
@@ -710,21 +840,15 @@ function StatusBadge({ status, config }) {
 }
 
 function StatCard({ label, value, icon, accent = 'brand' }) {
-  const accentConfigs = {
-    brand:   { bg: 'color-mix(in srgb, var(--color-brand), transparent 85%)', text: 'var(--color-brand)' },
-    warning: { bg: 'color-mix(in srgb, var(--color-warning), transparent 85%)', text: 'var(--color-warning)' },
-    success: { bg: 'color-mix(in srgb, var(--color-success), transparent 85%)', text: 'var(--color-success)' },
-    danger:  { bg: 'color-mix(in srgb, var(--color-danger), transparent 85%)', text: 'var(--color-danger)' },
+  const accents = {
+    brand:   'bg-brand-light text-brand',
+    warning: 'bg-warning/10 text-warning',
+    danger:  'bg-danger/10 text-danger',
+    success: 'bg-success/10 text-success',
   };
-
-  const cfg = accentConfigs[accent] || accentConfigs.brand;
-
   return (
     <div className="bg-surface rounded-lg border border-edge shadow-card p-5 flex items-center gap-4">
-      <div 
-        className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-        style={{ backgroundColor: cfg.bg, color: cfg.text }}
-      >
+      <div className={`w-10 h-10 rounded-lg ${accents[accent]} flex items-center justify-center shrink-0`}>
         {icon}
       </div>
       <div>
@@ -757,28 +881,20 @@ function TeacherQuickReport({
   const [searchInput, setSearchInput] = useState('');
   const [showDropdown, setShowDropdown] = useState(false);
 
-  const filteredStudents = useMemo(() => {
+  const filteredStudents = students.filter(s => {
     const query = searchInput.toLowerCase().trim();
-    if (!query) return [];
-    return students.filter((s) => {
-      return (
-        (s.fullName || '').toLowerCase().includes(query) ||
-        (s.matricule || '').toLowerCase().includes(query)
-      );
-    });
-  }, [students, searchInput]);
+    if (!query) return false;
+    return (
+      s.fullName.toLowerCase().includes(query) ||
+      (s.matricule && s.matricule.toLowerCase().includes(query))
+    );
+  });
 
-  const selectedStudent = students.find((s) => String(s.id) === String(form.studentId));
+  const selectedStudent = students.find(s => String(s.id) === form.studentId);
 
   const handleSelectStudent = (studentId, studentName) => {
     onChange('studentId', String(studentId));
     setSearchInput(studentName);
-    setShowDropdown(false);
-  };
-
-  const handleClearSelection = () => {
-    onChange('studentId', '');
-    setSearchInput('');
     setShowDropdown(false);
   };
 
@@ -787,41 +903,29 @@ function TeacherQuickReport({
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-base font-semibold text-ink">Teacher Report</h2>
-          <p className="text-sm text-ink-tertiary mt-1">Search for a student, pick the infraction, and submit a disciplinary case.</p>
+          <p className="text-sm text-ink-tertiary mt-1">Search for a student and write the reason to open a disciplinary case.</p>
         </div>
       </div>
 
       <form onSubmit={onSubmit} className="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3">
         <div className="md:col-span-1 relative">
           <label className="block text-xs font-medium text-ink-secondary mb-1">Student</label>
-          <div className="relative">
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(e) => { setSearchInput(e.target.value); setShowDropdown(true); }}
-              onFocus={() => setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 250)}
-              placeholder="Search by name or ID..."
-              className={`w-full px-3 py-2 text-sm bg-control-bg border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand transition-all ${form.studentId ? 'border-success/50 ring-1 ring-success/20' : 'border-control-border'
-                }`}
-            />
-            {searchInput && (
-              <button
-                type="button"
-                onClick={handleClearSelection}
-                className="absolute right-2 top-1/2 -translate-y-1/2 text-ink-muted hover:text-ink transition-colors p-1"
-                title="Clear selection"
-              >
-                <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            )}
-          </div>
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => {
+              setSearchInput(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+            onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
+            placeholder="Search by name or ID..."
+            className="w-full px-3 py-2 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand"
+          />
           {showDropdown && (
             <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-control-border rounded-md shadow-lg z-10 max-h-48 overflow-y-auto">
               {filteredStudents.length > 0 ? (
-                filteredStudents.map((s) => (
+                filteredStudents.map(s => (
                   <button
                     key={s.id}
                     type="button"
@@ -830,49 +934,48 @@ function TeacherQuickReport({
                   >
                     <p className="font-medium text-ink">{s.fullName}</p>
                     <p className="text-xs text-ink-tertiary">
-                      {s.matricule ? `ID: ${s.matricule}` : ''}
+                      {s.matricule && `ID: ${s.matricule}`}
+                      {s.matricule && s.promo?.nom ? ' · ' : ''}
+                      {s.promo?.nom || ''}
                     </p>
                   </button>
                 ))
               ) : searchInput.trim() ? (
-                <div className="px-3 py-3 text-sm text-ink-muted text-center">No students found</div>
+                <div className="px-3 py-3 text-sm text-ink-muted text-center">
+                  No students found
+                </div>
               ) : (
-                <div className="px-3 py-3 text-sm text-ink-muted text-center">Start typing to search...</div>
+                <div className="px-3 py-3 text-sm text-ink-muted text-center">
+                  Start typing to search...
+                </div>
               )}
             </div>
           )}
-          {form.studentId && selectedStudent && (
-            <div className="flex items-center gap-1.5 mt-1.5 px-2 py-1 bg-success/5 rounded border border-success/20 w-fit">
-              <span className="text-success">{icons.check({ className: 'w-3 h-3' })}</span>
-              <p className="text-[11px] font-medium text-success">
-                {selectedStudent.fullName} selected
-              </p>
-            </div>
+          {form.studentId && !searchInput && (
+            <p className="text-xs text-success mt-1">✓ {selectedStudent?.fullName} selected</p>
           )}
         </div>
 
         <div className="md:col-span-1">
-          <label className="block text-xs font-medium text-ink-secondary mb-1">Infraction</label>
+          <label className="block text-xs font-medium text-ink-secondary mb-1">Infraction Level</label>
           <select
             value={form.typeInfraction}
             onChange={(e) => onChange('typeInfraction', e.target.value)}
             className="w-full px-3 py-2 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand"
             required
           >
-            <option value="">Select infraction...</option>
-            {Array.isArray(infractions) && infractions.length > 0 ? (
+            <option value="">Select infraction level...</option>
+            {infractions.length > 0 ? (
               infractions.map((infraction) => {
-                const label = infraction.nom_en || infraction.nom_ar || `Infraction #${infraction.id}`;
-                const grav = infraction.gravite === 'tres_grave' ? 'Très grave' :
-                  infraction.gravite ? infraction.gravite.charAt(0).toUpperCase() + infraction.gravite.slice(1) : '';
+                const label = `${infraction.nom_en || infraction.nom_ar} (${infraction.gravite === 'tres_grave' ? 'Très grave' : infraction.gravite})`;
                 return (
-                  <option key={infraction.id} value={String(infraction.id)}>
-                    {grav ? `${label} (${grav})` : label}
+                  <option key={infraction.id} value={infraction.id}>
+                    {label}
                   </option>
                 );
               })
             ) : (
-              <>
+              <> 
                 <option value="faible">Faible</option>
                 <option value="moyenne">Moyenne</option>
                 <option value="grave">Grave</option>
@@ -882,7 +985,7 @@ function TeacherQuickReport({
           </select>
         </div>
 
-        <div className="md:col-span-2">
+        <div className="md:col-span-1">
           <label className="block text-xs font-medium text-ink-secondary mb-1">Details</label>
           <textarea
             value={form.reason}
@@ -901,8 +1004,8 @@ function TeacherQuickReport({
           </div>
           <button
             type="submit"
-            disabled={submitting || !form.studentId || !form.typeInfraction}
-            className="px-4 py-2 text-sm font-medium text-surface bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
+            disabled={submitting || !form.studentId}
+            className="px-4 py-2 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {submitting ? 'Submitting...' : 'Create Case'}
           </button>
@@ -915,8 +1018,8 @@ function TeacherQuickReport({
 /* ── Tab Definitions ────────────────────────────────────────── */
 
 const ADMIN_TABS = [
-  { id: 'cases', label: 'Cases', Icon: icons.folder },
-  { id: 'meetings', label: 'Meetings', Icon: icons.calendar },
+  { id: 'cases',       label: 'Cases',       Icon: icons.folder },
+  { id: 'meetings',    label: 'Meetings',    Icon: icons.calendar },
   { id: 'new-meeting', label: 'New Meeting', Icon: icons.plus },
 ];
 
@@ -940,8 +1043,6 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
   const isAdminView = normalizedRole === 'admin';
   const isPresidentView = normalizedRole === 'president';
   const canTeacherReport = normalizedRole === 'teacher';
-  // Teachers can also view meetings they're members of — server-side
-  // enforces the membership filter for non-admins (see listConseils).
   const canViewMeetings = isAdminView || isPresidentView || canTeacherReport;
   const canManageMeetings = isAdminView;
   const availableTabs = isAdminView
@@ -1030,16 +1131,34 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
             const rawCases = Array.isArray(cRes.value?.data) ? cRes.value.data : [];
             setCases(rawCases.map(normalizeCase).filter(Boolean));
           }
+
           if (mRes.status === 'fulfilled') {
             const rawMeetings = Array.isArray(mRes.value?.data) ? mRes.value.data : [];
             setMeetings(rawMeetings.map(normalizeMeeting).filter(Boolean));
           }
+
           if (sRes.status === 'fulfilled') {
             setStudents(Array.isArray(sRes.value?.data) ? sRes.value.data : []);
           }
-          setStaff(stRes.status === 'fulfilled' && Array.isArray(stRes.value?.data) ? stRes.value.data : []);
-          setInfractions(iRes.status === 'fulfilled' && Array.isArray(iRes.value?.data) ? iRes.value.data : []);
-          setDisciplinaryDecisions(dRes.status === 'fulfilled' && Array.isArray(dRes.value?.data) ? dRes.value.data : []);
+
+          if (stRes.status === 'fulfilled') {
+            const staffData = Array.isArray(stRes.value?.data) ? stRes.value.data : [];
+            setStaff(staffData);
+          } else {
+            setStaff([]);
+          }
+
+          if (iRes.status === 'fulfilled') {
+            setInfractions(Array.isArray(iRes.value?.data) ? iRes.value.data : []);
+          } else {
+            setInfractions([]);
+          }
+
+          if (dRes.status === 'fulfilled') {
+            setDisciplinaryDecisions(Array.isArray(dRes.value?.data) ? dRes.value.data : []);
+          } else {
+            setDisciplinaryDecisions([]);
+          }
         } else if (isPresidentView) {
           const [mRes, iRes, dRes] = await Promise.allSettled([
             request('/api/v1/disciplinary/meetings'),
@@ -1054,17 +1173,29 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
             const rawCasesFromMeetings = rawMeetings.flatMap((meeting) =>
               Array.isArray(meeting?.dossiers) ? meeting.dossiers : []
             );
+
             const dedupedCases = Array.from(
               new Map(rawCasesFromMeetings.map((item) => [item.id, item])).values()
             );
+
             setCases(dedupedCases.map(normalizeCase).filter(Boolean));
           }
-          setInfractions(iRes.status === 'fulfilled' && Array.isArray(iRes.value?.data) ? iRes.value.data : []);
-          setDisciplinaryDecisions(dRes.status === 'fulfilled' && Array.isArray(dRes.value?.data) ? dRes.value.data : []);
+
+          if (iRes.status === 'fulfilled') {
+            setInfractions(Array.isArray(iRes.value?.data) ? iRes.value.data : []);
+          } else {
+            setInfractions([]);
+          }
+
+          if (dRes.status === 'fulfilled') {
+            setDisciplinaryDecisions(Array.isArray(dRes.value?.data) ? dRes.value.data : []);
+          } else {
+            setDisciplinaryDecisions([]);
+          }
+
           setStudents([]);
           setStaff([]);
         } else {
-          // Teacher view — also loads meetings (server filters to membership) and infractions catalog
           const [cRes, sRes, mRes, iRes, dRes] = await Promise.allSettled([
             request('/api/v1/disciplinary/cases'),
             request('/api/v1/disciplinary/students'),
@@ -1077,17 +1208,30 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
             const rawCases = Array.isArray(cRes.value?.data) ? cRes.value.data : [];
             setCases(rawCases.map(normalizeCase).filter(Boolean));
           }
+
           if (sRes.status === 'fulfilled') {
             setStudents(Array.isArray(sRes.value?.data) ? sRes.value.data : []);
           }
+
           if (mRes.status === 'fulfilled') {
             const rawMeetings = Array.isArray(mRes.value?.data) ? mRes.value.data : [];
             setMeetings(rawMeetings.map(normalizeMeeting).filter(Boolean));
           } else {
             setMeetings([]);
           }
-          setInfractions(iRes.status === 'fulfilled' && Array.isArray(iRes.value?.data) ? iRes.value.data : []);
-          setDisciplinaryDecisions(dRes.status === 'fulfilled' && Array.isArray(dRes.value?.data) ? dRes.value.data : []);
+
+          if (iRes.status === 'fulfilled') {
+            setInfractions(Array.isArray(iRes.value?.data) ? iRes.value.data : []);
+          } else {
+            setInfractions([]);
+          }
+
+          if (dRes.status === 'fulfilled') {
+            setDisciplinaryDecisions(Array.isArray(dRes.value?.data) ? dRes.value.data : []);
+          } else {
+            setDisciplinaryDecisions([]);
+          }
+
           setStaff([]);
         }
       } catch {
@@ -1120,10 +1264,10 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
 
     const studentId = Number(reportForm.studentId);
     const reason = reportForm.reason.trim();
-    const typeInfractionRaw = String(reportForm.typeInfraction || '').trim();
+    const typeInfraction = reportForm.typeInfraction.trim();
 
-    if (!studentId || !typeInfractionRaw) {
-      setReportError('Please pick a student and an infraction.');
+    if (!studentId || !typeInfraction) {
+      setReportError('Please fill in all required fields.');
       return;
     }
 
@@ -1135,13 +1279,11 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
         titre: 'Teacher disciplinary report',
       };
 
-      // Catalog rows expose numeric ids; fallback strings (e.g. "moyenne")
-      // still flow through the backend's typeInfraction → gravite resolver.
-      const selectedInfractionId = Number(typeInfractionRaw);
+      const selectedInfractionId = Number(typeInfraction);
       if (Number.isInteger(selectedInfractionId) && selectedInfractionId > 0) {
         payload.infractionId = selectedInfractionId;
       } else {
-        payload.typeInfraction = typeInfractionRaw;
+        payload.typeInfraction = typeInfraction;
       }
 
       await request('/api/v1/disciplinary/cases', {
@@ -1175,8 +1317,7 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
   const filteredCases = cases.filter((c) => {
     if (filterStatus !== 'all' && c.status !== filterStatus) return false;
     if (filterType !== 'All' && c.violationType) {
-      // Match against the catalog label substring so the filter works
-      // regardless of the gravity suffix tacked on by the adapter.
+      // Check if violationType contains the filter value (case-insensitive)
       const violationLower = c.violationType.toLowerCase();
       const filterLower = filterType.toLowerCase();
       if (!violationLower.includes(filterLower)) return false;
@@ -1195,35 +1336,39 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
     resolved: cases.filter(c => c.status === 'sanctioned' || c.status === 'closed').length,
   };
 
-  const currentEnseignantId = user?.enseignant?.id ?? null;
-
   const filteredMeetings = meetings
-    .filter((m) => {
-      // Teachers see meetings they participate in (president, rapporteur, or member).
-      // Backend already filters this for non-admins, but we re-check defensively.
-      if (canTeacherReport && !isAdminView && currentEnseignantId) {
-        const isPresident = m.presidentEnseignantId === currentEnseignantId;
-        const isRapporteur = m.rapporteurEnseignantId === currentEnseignantId;
-        const isMember = Array.isArray(m.membres)
-          && m.membres.some((mem) => mem.enseignantId === currentEnseignantId);
+    .filter(m => {
+      const currentUserId = user?.enseignant?.id;
+      
+      // For teachers (reporters), show meetings where they are president OR members
+      if (canTeacherReport && !isAdminView) {
+        const isPresident = m.presidentEnseignantId === currentUserId;
+        const isRapporteur = m.rapporteurEnseignantId === currentUserId;
+        const isMember = Array.isArray(m.membres) && 
+          m.membres.some(mem => mem.enseignantId === currentUserId);
+        
+        // Show if president, rapporteur, or member
         if (!isPresident && !isRapporteur && !isMember) return false;
       }
-
-      // Presidents on "Decision Meetings" → only meetings they preside.
+      
+      // For presidents viewing "Decision Meetings" tab: only show their president meetings
       if (isPresidentView && activeTab === 'meetings') {
-        if (m.presidentEnseignantId !== currentEnseignantId) return false;
+        if (m.presidentEnseignantId !== currentUserId) return false;
       }
-
-      // Presidents on "My Meetings" → meetings where they are member/rapporteur but NOT president.
+      
+      // For presidents viewing "My Meetings" tab: show meetings where they are members (not president)
       if (isPresidentView && activeTab === 'my-meetings') {
-        const isPresident = m.presidentEnseignantId === currentEnseignantId;
-        const isRapporteur = m.rapporteurEnseignantId === currentEnseignantId;
-        const isMember = Array.isArray(m.membres)
-          && m.membres.some((mem) => mem.enseignantId === currentEnseignantId);
-        if (isPresident) return false;
-        if (!isRapporteur && !isMember) return false;
+        const isPresident = m.presidentEnseignantId === currentUserId;
+        const isRapporteur = m.rapporteurEnseignantId === currentUserId;
+        
+        // Check if user is in the membres array
+        const isMember = Array.isArray(m.membres) && 
+          m.membres.some(mem => mem.enseignantId === currentUserId);
+        
+        if (isPresident) return false; // Don't show their own meetings
+        if (!isRapporteur && !isMember) return false; // Only show if member or rapporteur
       }
-
+      
       if (meetingFilterStatus !== 'all' && m.status !== meetingFilterStatus) return false;
       if (meetingSearch) {
         const q = meetingSearch.toLowerCase();
@@ -1245,9 +1390,12 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
 
   const handleDeleteCase = async (caseId) => {
     if (!window.confirm('Are you sure you want to delete this case? This action cannot be undone.')) return;
+
     try {
       const numericId = Number(String(caseId).replace('CASE-', ''));
-      await request(`/api/v1/disciplinary/cases/${numericId}`, { method: 'DELETE' });
+      await request(`/api/v1/disciplinary/cases/${numericId}`, {
+        method: 'DELETE',
+      });
       await loadCases();
     } catch (error) {
       window.alert(error?.message || 'Failed to delete case.');
@@ -1272,11 +1420,11 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
   }
 
   if (selectedMeeting) {
-    // Members and rapporteurs viewing a meeting they don't preside get read-only access.
-    const isUserPresident = selectedMeeting.presidentEnseignantId === currentEnseignantId;
-    const isUserMember = (selectedMeeting.membreIds || []).includes(String(currentEnseignantId));
-    const isUserRapporteur = selectedMeeting.rapporteurEnseignantId === currentEnseignantId;
-    const viewOnly = !isAdminView && !isUserPresident && (isUserMember || isUserRapporteur);
+    // Determine if user is viewing in read-only mode (member of meeting they don't preside over)
+    const isUserPresident = selectedMeeting.presidentEnseignantId === user?.enseignant?.id;
+    const isUserMember = (selectedMeeting.membreIds || []).includes(String(user?.enseignant?.id));
+    const isUserRapporteur = selectedMeeting.rapporteurEnseignantId === user?.enseignant?.id;
+    const viewOnly = isPresidentView && !isUserPresident && (isUserMember || isUserRapporteur);
 
     return (
       <MeetingDetailView
@@ -1286,7 +1434,7 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
         decisionChoices={disciplinaryDecisions}
         canManageMeeting={canManageMeetings && !viewOnly}
         viewOnly={viewOnly}
-        currentEnseignantId={currentEnseignantId}
+        currentEnseignantId={user?.enseignant?.id ?? null}
         onBack={() => setSelectedMeeting(null)}
         onMeetingUpdated={async (updatedMeeting) => {
           await Promise.all([loadMeetings(), loadCases()]);
@@ -1311,19 +1459,11 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
     <div className="space-y-6 min-w-0">
 
       {/* Confidential banner */}
-      <div 
-        className="flex items-center gap-4 rounded-xl px-5 py-4"
-        style={{ backgroundColor: 'color-mix(in srgb, var(--color-warning), transparent 85%)' }}
-      >
-        <div 
-          className="w-10 h-10 rounded-lg flex items-center justify-center shrink-0"
-          style={{ backgroundColor: 'color-mix(in srgb, var(--color-warning), transparent 80%)' }}
-        >
-          {icons.lock({ className: 'w-5 h-5 text-warning' })}
-        </div>
+      <div className="flex items-center gap-3 rounded-lg border border-warning/30 bg-warning/10 px-4 py-3">
+        {icons.lock({ className: 'w-5 h-5 text-warning shrink-0' })}
         <div>
-          <p className="text-sm font-bold text-warning tracking-tight uppercase">Restricted Access — Confidential Records</p>
-          <p className="mt-0.5 text-[13px] text-ink-secondary leading-relaxed font-medium">
+          <p className="text-sm font-medium text-warning">Restricted Access — Confidential Records</p>
+          <p className="mt-0.5 text-xs text-warning">
             This module contains sensitive disciplinary data. Access is logged and limited to authorized personnel only.
           </p>
         </div>
@@ -1358,7 +1498,7 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
             </button>
             <button
               onClick={() => goToNewMeeting()}
-              className="px-4 py-2.5 text-sm font-medium text-surface bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm focus:ring-2 focus:ring-brand/30 focus:ring-offset-2"
+              className="px-4 py-2.5 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm focus:ring-2 focus:ring-brand/30 focus:ring-offset-2"
             >
               {icons.plus({ className: 'w-4 h-4' })}
               New Meeting
@@ -1394,10 +1534,11 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
           <button
             key={id}
             onClick={() => setActiveTab(id)}
-            className={`px-4 py-1.5 rounded text-sm font-medium transition-all duration-150 flex items-center gap-2 focus:ring-2 focus:ring-brand/30 ${activeTab === id
-              ? 'bg-brand text-surface shadow-sm'
-              : 'text-ink-secondary hover:text-ink hover:bg-surface-300/50'
-              }`}
+            className={`px-4 py-1.5 rounded text-sm font-medium transition-all duration-150 flex items-center gap-2 focus:ring-2 focus:ring-brand/30 ${
+              activeTab === id
+                ? 'bg-brand text-white shadow-sm'
+                : 'text-ink-secondary hover:text-ink hover:bg-surface-300/50'
+            }`}
           >
             <Icon className="w-4 h-4" />
             {label}
@@ -1417,10 +1558,11 @@ export default function DisciplinaryCasesPage({ role = 'teacher' }) {
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           canScheduleMeetings={canManageMeetings}
-          canDeleteCases={isAdminView || canTeacherReport}
           onSelectCase={setSelectedCase}
           onConvoke={goToNewMeeting}
           onDeleteCase={handleDeleteCase}
+          canDeleteCases={isAdminView || canTeacherReport}
+          user={user}
           infractions={infractions}
         />
       )}
@@ -1475,14 +1617,14 @@ function AddCouncilMemberModal({ meetings = [], staff = [], onClose, onAdded }) 
     return (Array.isArray(staff) ? staff : [])
       .filter((member) => member && typeof member === 'object')
       .map((member) => {
-        const parsedId = Number(member.id);
-        const name = member.name || [member.prenom, member.nom].filter(Boolean).join(' ').trim();
+          const parsedId = Number(member.id);
+          const name = member.name || [member.prenom, member.nom].filter(Boolean).join(' ').trim();
 
-        return {
-          id: Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null,
-          name,
-          grade: member.grade || 'Teacher',
-        };
+          return {
+            id: Number.isInteger(parsedId) && parsedId > 0 ? parsedId : null,
+            name,
+            grade: member.grade || 'Teacher',
+          };
       })
       .filter((teacher) => {
         if (!Number.isInteger(teacher.id) || teacher.id <= 0 || !teacher.name) return false;
@@ -1506,6 +1648,15 @@ function AddCouncilMemberModal({ meetings = [], staff = [], onClose, onAdded }) 
   const [selectedRole, setSelectedRole] = useState('membre');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const filteredTeachers = useMemo(() => {
+    if (!searchQuery.trim()) return teacherOptions;
+    const q = searchQuery.toLowerCase();
+    return teacherOptions.filter((teacher) =>
+      teacher.name.toLowerCase().includes(q) || teacher.grade.toLowerCase().includes(q)
+    );
+  }, [teacherOptions, searchQuery]);
 
   useEffect(() => {
     if (availableConseils.length === 0) {
@@ -1521,17 +1672,17 @@ function AddCouncilMemberModal({ meetings = [], staff = [], onClose, onAdded }) 
   }, [availableConseils, selectedConseilId]);
 
   useEffect(() => {
-    if (teacherOptions.length === 0) {
+    if (filteredTeachers.length === 0) {
       setSelectedTeacherId('');
       return;
     }
 
-    if (teacherOptions.some((teacher) => String(teacher.id) === selectedTeacherId)) {
+    if (filteredTeachers.some((teacher) => String(teacher.id) === selectedTeacherId)) {
       return;
     }
 
-    setSelectedTeacherId(String(teacherOptions[0].id));
-  }, [teacherOptions, selectedTeacherId]);
+    setSelectedTeacherId(String(filteredTeachers[0].id));
+  }, [filteredTeachers, selectedTeacherId]);
 
   const handleSubmit = async () => {
     const conseilId = Number(selectedConseilId);
@@ -1619,24 +1770,52 @@ function AddCouncilMemberModal({ meetings = [], staff = [], onClose, onAdded }) 
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-ink-secondary mb-1">Teacher</label>
-            <select
-              value={selectedTeacherId}
-              onChange={(e) => setSelectedTeacherId(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand"
-            >
-              <option value="">Select teacher...</option>
-              {teacherOptions.map((teacher) => (
-                <option key={teacher.id} value={teacher.id}>
-                  {teacher.name} ({teacher.grade})
-                </option>
-              ))}
-            </select>
-            {teacherOptions.length === 0 && (
-              <p className="mt-2 text-xs text-ink-muted">
-                No teachers available. Please reload the page and make sure disciplinary staff data loads correctly.
-              </p>
-            )}
+            <label className="block text-sm font-medium text-ink-secondary mb-1">Search Teacher</label>
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search by name or grade..."
+              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-ink-secondary mb-2">Select Teacher</label>
+            <div className="bg-control-bg border border-control-border rounded-md max-h-48 overflow-y-auto">
+              {filteredTeachers.length > 0 ? (
+                <div className="divide-y divide-edge-subtle">
+                  {filteredTeachers.map((teacher) => (
+                    <button
+                      key={teacher.id}
+                      type="button"
+                      onClick={() => setSelectedTeacherId(String(teacher.id))}
+                      className={`w-full text-left px-3 py-2.5 text-sm transition-colors hover:bg-surface-200 ${
+                        String(selectedTeacherId) === String(teacher.id)
+                          ? 'bg-brand/10 text-brand font-medium'
+                          : 'text-ink'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{teacher.name}</p>
+                          <p className="text-xs text-ink-secondary">{teacher.grade}</p>
+                        </div>
+                        {String(selectedTeacherId) === String(teacher.id) && (
+                          <span className="text-brand font-semibold">✓</span>
+                        )}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : (
+                <div className="px-3 py-4 text-center">
+                  <p className="text-sm text-ink-muted">
+                    {searchQuery.trim() ? 'No teachers found matching your search.' : 'No teachers available.'}
+                  </p>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
@@ -1669,8 +1848,8 @@ function AddCouncilMemberModal({ meetings = [], staff = [], onClose, onAdded }) 
             </button>
             <button
               onClick={handleSubmit}
-              disabled={submitting || teacherOptions.length === 0}
-              className="px-4 py-2.5 text-sm font-medium text-surface bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={submitting || filteredTeachers.length === 0 || !selectedTeacherId}
+              className="px-4 py-2.5 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {icons.users({ className: 'w-4 h-4' })}
               {submitting ? 'Adding...' : 'Add Member'}
@@ -1693,21 +1872,23 @@ function CasesTab({
   filterType, setFilterType,
   searchQuery, setSearchQuery,
   canScheduleMeetings = false,
-  canDeleteCases = false,
   onSelectCase, onConvoke, onDeleteCase,
+  canDeleteCases = false,
+  user,
   infractions = [],
 }) {
-  // Build infraction filter options from the live catalog so admins can
-  // narrow by the same labels that reports actually use.
+  // Build infraction options from the infractions data
   const infractionOptions = useMemo(() => {
     const options = ['All'];
     if (Array.isArray(infractions) && infractions.length > 0) {
-      infractions.forEach((inf) => {
+      infractions.forEach(inf => {
         const label = inf.nom_en || inf.nom_ar || `Infraction #${inf.id}`;
-        if (!options.includes(label)) options.push(label);
+        if (!options.includes(label)) {
+          options.push(label);
+        }
       });
     }
-    return options.length > 1 ? options : VIOLATION_TYPES;
+    return options.length > 1 ? options : ['All', 'Plagiarism', 'Exam Fraud', 'Misconduct'];
   }, [infractions]);
 
   return (
@@ -1727,10 +1908,11 @@ function CasesTab({
             <button
               key={f.key}
               onClick={() => setFilterStatus(f.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${filterStatus === f.key
-                ? 'bg-brand text-surface shadow-sm'
-                : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
-                }`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${
+                filterStatus === f.key
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
+              }`}
             >
               {f.label}
             </button>
@@ -1766,7 +1948,7 @@ function CasesTab({
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead>
-            <tr className="border-b border-edge-subtle bg-surface-200/40 dark:bg-surface-300/30">
+            <tr className="border-b border-edge-subtle">
               <th className="px-6 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Case ID</th>
               <th className="px-6 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Student</th>
               <th className="px-6 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider hidden md:table-cell">Violation</th>
@@ -1807,9 +1989,6 @@ function CasesTab({
                       {c.description && (
                         <p className="text-xs text-ink-tertiary mt-1 line-clamp-2">{c.description}</p>
                       )}
-                      {c.reporterName && (
-                        <p className="text-xs text-ink-tertiary mt-0.5">Reported by: {c.reporterName}</p>
-                      )}
                     </td>
                     <td className="px-6 py-3.5 hidden md:table-cell">
                       <span className="text-ink-secondary">{c.violationType}</span>
@@ -1827,7 +2006,7 @@ function CasesTab({
                     </td>
                     <td className="px-6 py-3.5 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {canScheduleMeetings && c.status === 'pending' && (
+                        {canScheduleMeetings && (
                           <button
                             onClick={e => { e.stopPropagation(); onConvoke([c.id]); }}
                             className="px-2.5 py-1 text-xs font-medium text-ink-secondary bg-surface-200 dark:bg-surface-300/30 border border-edge rounded-md hover:bg-surface-300 transition-colors duration-100 focus:ring-2 focus:ring-brand/30"
@@ -1836,7 +2015,7 @@ function CasesTab({
                             {icons.scale({ className: 'w-3.5 h-3.5' })}
                           </button>
                         )}
-                        {canDeleteCases && c.status === 'pending' && typeof onDeleteCase === 'function' && (
+                        {canDeleteCases && c.status === 'pending' && (
                           <button
                             onClick={e => { e.stopPropagation(); onDeleteCase(c.id); }}
                             className="px-2.5 py-1 text-xs font-medium text-danger bg-danger/5 border border-danger/30 rounded-md hover:bg-danger/10 transition-colors duration-100 focus:ring-2 focus:ring-danger/30"
@@ -1866,7 +2045,7 @@ function CasesTab({
         <p className="text-xs text-ink-muted">Showing {cases.length} of {allCases.length} cases</p>
         <div className="flex items-center gap-1">
           <button className="px-2.5 py-1 text-xs font-medium text-ink-tertiary bg-surface-200 dark:bg-surface-300/30 rounded hover:bg-surface-300 transition-colors focus:ring-2 focus:ring-brand/30">Prev</button>
-          <button className="px-2.5 py-1 text-xs font-medium text-surface bg-brand rounded shadow-sm">1</button>
+          <button className="px-2.5 py-1 text-xs font-medium text-white bg-brand rounded shadow-sm">1</button>
           <button className="px-2.5 py-1 text-xs font-medium text-ink-tertiary bg-surface-200 dark:bg-surface-300/30 rounded hover:bg-surface-300 transition-colors focus:ring-2 focus:ring-brand/30">Next</button>
         </div>
       </div>
@@ -1894,10 +2073,11 @@ function MeetingsTab({ meetings, cases, filterStatus, setFilterStatus, search, s
             <button
               key={f.key}
               onClick={() => setFilterStatus(f.key)}
-              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${filterStatus === f.key
-                ? 'bg-brand text-surface shadow-sm'
-                : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
-                }`}
+              className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors duration-100 focus:ring-2 focus:ring-brand/30 ${
+                filterStatus === f.key
+                  ? 'bg-brand text-white shadow-sm'
+                  : 'text-ink-secondary bg-surface-200 dark:bg-surface-300/30 hover:bg-surface-300 hover:text-ink'
+              }`}
             >
               {f.label}
             </button>
@@ -1920,7 +2100,7 @@ function MeetingsTab({ meetings, cases, filterStatus, setFilterStatus, search, s
       <div className="overflow-x-auto">
         <table className="w-full text-sm text-left">
           <thead>
-            <tr className="border-b border-edge-subtle bg-surface-200/40 dark:bg-surface-300/30">
+            <tr className="border-b border-edge-subtle">
               <th className="px-6 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">Date</th>
               <th className="px-6 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider">ID</th>
               <th className="px-6 py-3 text-xs font-semibold text-ink-muted uppercase tracking-wider hidden md:table-cell">Participants</th>
@@ -1941,7 +2121,17 @@ function MeetingsTab({ meetings, cases, filterStatus, setFilterStatus, search, s
               </tr>
             ) : (
               meetings.map(m => {
-                const relatedCases = m.caseIds.map(cid => cases.find(c => c.id === cid)).filter(Boolean);
+                // Extract dossiers directly from the meeting's dossiers array if available
+                const caseDisplay = Array.isArray(m.dossiers) && m.dossiers.length > 0
+                  ? m.dossiers.map(d => {
+                      const studentName = [d.etudiant?.user?.prenom, d.etudiant?.user?.nom].filter(Boolean).join(' ').trim() || 'Unknown';
+                      return studentName;
+                    })
+                  : m.caseIds.map(cid => {
+                      const c = cases.find(c => c.id === cid || c.id === `CASE-${cid}` || `CASE-${c.id}` === cid);
+                      return c?.studentName || 'Unknown';
+                    }).filter(Boolean);
+                
                 return (
                   <tr
                     key={m.id}
@@ -1969,9 +2159,13 @@ function MeetingsTab({ meetings, cases, filterStatus, setFilterStatus, search, s
                     </td>
                     <td className="px-6 py-3.5">
                       <div className="flex flex-col gap-0.5">
-                        {relatedCases.map(rc => (
-                          <span key={rc.id} className="text-xs text-ink-secondary">{rc.studentName}</span>
-                        ))}
+                        {caseDisplay.length > 0 ? (
+                          caseDisplay.map((name, idx) => (
+                            <span key={idx} className="text-xs text-ink-secondary">{name}</span>
+                          ))
+                        ) : (
+                          <span className="text-xs text-ink-muted">--</span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-3.5 hidden lg:table-cell max-w-[180px]">
@@ -2020,15 +2214,15 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
 
           return {
             id: Number.isInteger(parsedId) && parsedId > 0 ? parsedId : fallbackId,
-            name: name || `Teacher #${fallbackId}`,
-            grade: member.grade || 'Teacher',
+            name: name || `Staff #${fallbackId}`,
+            grade: member.grade || 'Staff',
           };
         }
 
         return {
           id: index + 1,
-          name: String(member || `Teacher #${index + 1}`),
-          grade: 'Teacher',
+          name: String(member || `Staff #${index + 1}`),
+          grade: 'Staff',
         };
       })
       .filter((member) => {
@@ -2046,27 +2240,15 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
     presidentId: staffMembers[0]?.id || null,
     memberIds: [],
   });
+  const [presidentSearch, setPresidentSearch] = useState('');
+  const [memberSearch, setMemberSearch] = useState('');
+  const [presidentSearchResults, setPresidentSearchResults] = useState([]);
+  const [memberSearchResults, setMemberSearchResults] = useState([]);
+  const [showPresidentResults, setShowPresidentResults] = useState(false);
+  const [showMemberResults, setShowMemberResults] = useState(false);
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState('');
-  const [presidentSearch, setPresidentSearch] = useState('');
-  const [memberSearch, setMemberSearch] = useState('');
-
-  const filteredStaffForPresident = useMemo(() => {
-    const q = presidentSearch.trim().toLowerCase();
-    if (!q) return staffMembers;
-    return staffMembers.filter((m) =>
-      (m.name || '').toLowerCase().includes(q) || (m.grade || '').toLowerCase().includes(q)
-    );
-  }, [staffMembers, presidentSearch]);
-
-  const filteredStaffForMembers = useMemo(() => {
-    const q = memberSearch.trim().toLowerCase();
-    if (!q) return staffMembers;
-    return staffMembers.filter((m) =>
-      (m.name || '').toLowerCase().includes(q) || (m.grade || '').toLowerCase().includes(q)
-    );
-  }, [staffMembers, memberSearch]);
 
   const selectedCases = selectedCaseIds.map(id => cases.find(c => c.id === id)).filter(Boolean);
   const selectedReporters = Array.from(
@@ -2099,6 +2281,45 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
     const isReporter = primaryReporter?.id != null && Number(primaryReporter.id) === Number(member.id);
     return !isPresident && !isReporter;
   }).length;
+
+  // Search staff by name or grade
+  const handlePresidentSearch = async (query) => {
+    setPresidentSearch(query);
+    if (query.length < 2) {
+      setPresidentSearchResults([]);
+      setShowPresidentResults(false);
+      return;
+    }
+
+    try {
+      const response = await request(`/api/v1/disciplinary/staff/search?q=${encodeURIComponent(query)}`);
+      if (response?.success && Array.isArray(response.data)) {
+        setPresidentSearchResults(response.data);
+        setShowPresidentResults(true);
+      }
+    } catch (error) {
+      console.error('Failed to search staff:', error);
+    }
+  };
+
+  const handleMemberSearch = async (query) => {
+    setMemberSearch(query);
+    if (query.length < 2) {
+      setMemberSearchResults([]);
+      setShowMemberResults(false);
+      return;
+    }
+
+    try {
+      const response = await request(`/api/v1/disciplinary/staff/search?q=${encodeURIComponent(query)}`);
+      if (response?.success && Array.isArray(response.data)) {
+        setMemberSearchResults(response.data);
+        setShowMemberResults(true);
+      }
+    } catch (error) {
+      console.error('Failed to search staff:', error);
+    }
+  };
 
   useEffect(() => {
     if (staffMembers.length === 0) return;
@@ -2133,6 +2354,12 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
       presidentId: Number.isInteger(presidentId) && presidentId > 0 ? presidentId : null,
       memberIds: prev.memberIds.filter((id) => Number(id) !== presidentId),
     }));
+    setPresidentSearch('');
+    setShowPresidentResults(false);
+  };
+
+  const handleSelectPresident = (staffMember) => {
+    handlePresidentChange(staffMember.id);
   };
 
   const toggleMember = (memberId) => {
@@ -2160,6 +2387,12 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
     });
   };
 
+  const handleAddMember = (staffMember) => {
+    toggleMember(staffMember.id);
+    setMemberSearch('');
+    setShowMemberResults(false);
+  };
+
   const handleSave = async () => {
     if (!form.date || !form.time || !form.location.trim() || selectedCases.length === 0 || saving) return;
 
@@ -2168,8 +2401,8 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
       return;
     }
 
-    if (form.memberIds.length !== REQUIRED_ADDITIONAL_MEMBER_COUNT) {
-      setSaveError(`You must select exactly ${REQUIRED_ADDITIONAL_MEMBER_COUNT} additional members.`);
+    if (form.memberIds.length !== MAX_ADDITIONAL_MEMBER_COUNT) {
+      setSaveError(`You must select exactly ${MAX_ADDITIONAL_MEMBER_COUNT} additional members.`);
       return;
     }
 
@@ -2195,8 +2428,8 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
         throw new Error('Selected president is invalid. Please choose again.');
       }
 
-      if (selectedMemberRows.length !== REQUIRED_ADDITIONAL_MEMBER_COUNT) {
-        throw new Error(`You must select exactly ${REQUIRED_ADDITIONAL_MEMBER_COUNT} additional valid members.`);
+      if (selectedMemberRows.length !== MAX_ADDITIONAL_MEMBER_COUNT) {
+        throw new Error(`You must select exactly ${MAX_ADDITIONAL_MEMBER_COUNT} additional members.`);
       }
 
       if (primaryReporter.id && Number(primaryReporter.id) === Number(form.presidentId)) {
@@ -2213,26 +2446,7 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
         return;
       }
 
-      // Generate and download PDF
-      await downloadMeetingFormPdf({
-        title: form.title,
-        meetingDate: form.date,
-        meetingTime: form.time,
-        meetingLocation: form.location,
-        agenda: form.agenda,
-        studentRows: selectedCases.map((item) => ({
-          caseId: item.id,
-          studentName: item.studentName,
-          studentId: item.studentId,
-          violationType: item.violationType,
-          caseDate: item.dateReported || item.dateOfIncident,
-        })),
-        memberRows: [
-          { name: presidentStaff.name, role: 'Président' },
-          { name: primaryReporter.name, role: 'Rapporteur (auto)' },
-          ...selectedMemberRows.map((member) => ({ name: member.name, role: 'Membre' })),
-        ],
-      });
+      // Save meeting to database (no PDF generation for admins)
 
       // Save meeting to database
       const meetingPayload = {
@@ -2313,11 +2527,9 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
             className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand"
           >
             <option value="" disabled>+ Add a case...</option>
-            {cases
-              .filter((c) => !selectedCaseIds.includes(c.id) && c.status === 'pending')
-              .map((c) => (
-                <option key={c.id} value={c.id}>{c.studentName} ({c.id})</option>
-              ))}
+            {cases.filter(c => !selectedCaseIds.includes(c.id) && c.status === 'signale').map(c => (
+              <option key={c.id} value={c.id}>{c.studentName} ({c.id})</option>
+            ))}
           </select>
         </div>
 
@@ -2381,28 +2593,34 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
         <div className="bg-surface rounded-lg border border-edge shadow-card p-6">
           <h3 className="text-base font-semibold text-ink mb-4">Council Members</h3>
 
-          {/* President */}
+          {/* President with search */}
           <div className="mb-4">
             <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">President</label>
-            <input
-              type="text"
-              value={presidentSearch}
-              onChange={(e) => setPresidentSearch(e.target.value)}
-              placeholder="Filter by name or grade..."
-              className="mb-2 w-full px-3 py-2 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand"
-            />
-            <select
-              value={form.presidentId || ''}
-              onChange={(e) => handlePresidentChange(e.target.value)}
-              className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand"
-            >
-              <option value="" disabled>Select president...</option>
-              {filteredStaffForPresident.map((member) => (
-                <option key={member.id} value={member.id}>
-                  {member.name} ({member.grade})
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by name or grade..."
+                value={presidentSearch}
+                onChange={(e) => handlePresidentSearch(e.target.value)}
+                onFocus={() => presidentSearch.length >= 2 && setShowPresidentResults(true)}
+                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand"
+              />
+              {showPresidentResults && presidentSearchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-edge rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                  {presidentSearchResults.map((member) => (
+                    <button
+                      key={member.id}
+                      onClick={() => handleSelectPresident(member)}
+                      type="button"
+                      className="w-full text-left px-3 py-2 hover:bg-surface-200 transition-colors text-sm text-ink border-b border-edge-subtle last:border-b-0"
+                    >
+                      <span className="font-medium">{member.name}</span>
+                      <span className="text-ink-muted ml-2">({member.grade})</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             {selectedPresident && (
               <div className="mt-2 flex items-center gap-3 px-3 py-2.5 bg-success/5 border border-edge-strong rounded-md">
                 <Avatar name={selectedPresident.name} size="w-6 h-6 text-[9px]" />
@@ -2438,59 +2656,71 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
             )}
           </div>
 
-          {/* Members */}
+          {/* Members with search */}
           <div className="mb-4">
             <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
-              Members <span className="normal-case font-normal text-ink-muted">(exactly {REQUIRED_ADDITIONAL_MEMBER_COUNT} required — the reporter is added as rapporteur automatically)</span>
+              Members <span className="normal-case font-normal text-ink-muted">(exactly {MAX_ADDITIONAL_MEMBER_COUNT} required — the reporter is not counted as a member)</span>
             </label>
-            {availableMemberChoicesCount <= 2 && (
-              <p className="mb-2 text-xs text-ink-muted">
-                Only {availableMemberChoicesCount} selectable teacher{availableMemberChoicesCount === 1 ? '' : 's'} currently available after president/reporter assignment. Add more teacher accounts to select more members.
-              </p>
-            )}
-            <input
-              type="text"
-              value={memberSearch}
-              onChange={(e) => setMemberSearch(e.target.value)}
-              placeholder="Filter by name or grade..."
-              className="mb-2 w-full px-3 py-2 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand"
-            />
-            {form.memberIds.length < REQUIRED_ADDITIONAL_MEMBER_COUNT && (
-              <p className="mb-2 text-xs text-ink-muted bg-surface-200 rounded-md px-2 py-1">
-                Select {REQUIRED_ADDITIONAL_MEMBER_COUNT - form.memberIds.length} more member{REQUIRED_ADDITIONAL_MEMBER_COUNT - form.memberIds.length === 1 ? '' : 's'}.
-              </p>
-            )}
-            <div className="space-y-1 max-h-64 overflow-auto pr-1">
-              {filteredStaffForMembers.map((member) => {
-                const isSelected = form.memberIds.includes(member.id);
-                const isPresident = Number(form.presidentId) === Number(member.id);
-                const isReporter = primaryReporter?.id != null && Number(primaryReporter.id) === Number(member.id);
-                const lockBecauseMaxReached = form.memberIds.length >= MAX_ADDITIONAL_MEMBER_COUNT && !isSelected;
-                return (
-                  !isPresident && (
-                    <label
-                      key={member.id}
-                      className="flex items-center gap-3 px-2 py-2 rounded-md hover:bg-surface-200 dark:hover:bg-surface-300/20 transition-colors duration-100 cursor-pointer"
-                    >
-                      <input
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => toggleMember(member.id)}
-                        disabled={isReporter || lockBecauseMaxReached}
-                        className="rounded border-control-border text-brand focus:ring-brand/30"
-                      />
-                      <Avatar name={member.name} size="w-6 h-6 text-[9px]" />
-                      <div className="min-w-0">
-                        <p className="text-sm text-ink truncate">{member.name}</p>
-                        <p className="text-[11px] text-ink-muted truncate">Role: Member</p>
+            <div className="relative mb-3">
+              <input
+                type="text"
+                placeholder="Search by name or grade to add members..."
+                value={memberSearch}
+                onChange={(e) => handleMemberSearch(e.target.value)}
+                onFocus={() => memberSearch.length >= 2 && setShowMemberResults(true)}
+                className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink focus:ring-2 focus:ring-brand/30 focus:border-brand"
+              />
+              {showMemberResults && memberSearchResults.length > 0 && (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-edge rounded-md shadow-lg z-50 max-h-48 overflow-y-auto">
+                  {memberSearchResults
+                    .filter((member) => {
+                      const isPresident = Number(form.presidentId) === Number(member.id);
+                      const isReporter = primaryReporter?.id != null && Number(primaryReporter.id) === Number(member.id);
+                      const isAlreadySelected = form.memberIds.includes(member.id);
+                      return !isPresident && !isReporter && !isAlreadySelected;
+                    })
+                    .map((member) => (
+                      <button
+                        key={member.id}
+                        onClick={() => handleAddMember(member)}
+                        type="button"
+                        disabled={form.memberIds.length >= MAX_ADDITIONAL_MEMBER_COUNT}
+                        className="w-full text-left px-3 py-2 hover:bg-surface-200 transition-colors text-sm text-ink border-b border-edge-subtle last:border-b-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        <span className="font-medium">{member.name}</span>
+                        <span className="text-ink-muted ml-2">({member.grade})</span>
+                      </button>
+                    ))}
+                </div>
+              )}
+            </div>
+            <div className="space-y-1">
+              {form.memberIds.length > 0 && (
+                <div className="mb-2">
+                  <p className="text-xs font-medium text-ink-secondary mb-1">Selected members:</p>
+                  {form.memberIds.map((memberId) => {
+                    const member = staffMembers.find((m) => m.id === memberId);
+                    return member ? (
+                      <div key={memberId} className="flex items-center gap-2 px-2 py-1.5 bg-brand/5 border border-edge-strong rounded-md">
+                        <Avatar name={member.name} size="w-5 h-5 text-[8px]" />
+                        <span className="flex-1 text-sm text-ink">{member.name}</span>
+                        <button
+                          type="button"
+                          onClick={() => toggleMember(memberId)}
+                          className="text-brand/50 hover:text-brand transition-colors"
+                        >
+                          {icons.x({ className: 'w-3 h-3' })}
+                        </button>
                       </div>
-                      {isReporter && (
-                        <span className="ml-auto text-[11px] font-medium text-ink-muted">Reporter</span>
-                      )}
-                    </label>
-                  )
-                );
-              })}
+                    ) : null;
+                  })}
+                </div>
+              )}
+              {form.memberIds.length < MAX_ADDITIONAL_MEMBER_COUNT && (
+                <p className="text-xs text-ink-muted bg-surface-200 rounded-md px-2 py-1">
+                  You need to select {MAX_ADDITIONAL_MEMBER_COUNT - form.memberIds.length} more member{MAX_ADDITIONAL_MEMBER_COUNT - form.memberIds.length === 1 ? '' : 's'}.
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -2510,11 +2740,11 @@ function NewMeetingTab({ cases, staff = STAFF_MEMBERS_DEFAULT, preselected = [],
               || !form.location.trim()
               || selectedCases.length === 0
               || !form.presidentId
-              || form.memberIds.length !== REQUIRED_ADDITIONAL_MEMBER_COUNT
+              || form.memberIds.length !== MAX_ADDITIONAL_MEMBER_COUNT
               || selectedReporters.length !== 1
               || saving
             }
-            className="w-full px-4 py-2.5 text-sm font-medium text-surface bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-brand/30 focus:ring-offset-2"
+            className="w-full px-4 py-2.5 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center justify-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed focus:ring-2 focus:ring-brand/30 focus:ring-offset-2"
           >
             {icons.check({ className: 'w-4 h-4' })}
             {saving ? 'Validating meeting...' : 'Confirm &amp; Validate Meeting'}
@@ -2551,35 +2781,38 @@ function MeetingDetailView({
 }) {
   const [meetingState, setMeetingState] = useState(meeting);
   const [relatedCasesData, setRelatedCasesData] = useState([]);
-
-  // Fetch the full conseil (including dossiers + decisions) when opened. The
-  // listing endpoint returns a slimmer payload, so we re-hydrate here for the
-  // president decision UI to have the catalog ids + finalized verdict.
+  
+  // Fetch the full meeting details including related cases when component mounts
   useEffect(() => {
-    let cancelled = false;
-    if (!meeting?.conseilId) return undefined;
-
-    (async () => {
+    const fetchMeetingDetails = async () => {
       try {
-        const response = await request(`/api/v1/disciplinary/conseils/${meeting.conseilId}`);
-        if (cancelled) return;
-        if (response?.data) {
-          setMeetingState(normalizeMeeting(response.data));
-          if (Array.isArray(response.data.dossiers)) {
-            setRelatedCasesData(response.data.dossiers.map(normalizeCase).filter(Boolean));
+        if (meeting?.conseilId) {
+          const response = await request(`/api/v1/disciplinary/conseils/${meeting.conseilId}`);
+          if (response?.data) {
+            const fullMeeting = normalizeMeeting(response.data);
+            setMeetingState(fullMeeting);
+            
+            // Extract and normalize related dossiers from the response
+            if (response.data?.dossiers && Array.isArray(response.data.dossiers)) {
+              const normalizedDossiers = response.data.dossiers.map(normalizeCase).filter(Boolean);
+              setRelatedCasesData(normalizedDossiers);
+            }
           }
         }
-      } catch {
-        /* tolerate fetch failure — fall back to props */
+      } catch (error) {
+        console.error('Failed to fetch meeting details:', error);
       }
-    })();
+    };
 
-    return () => { cancelled = true; };
+    fetchMeetingDetails();
   }, [meeting?.conseilId]);
-
+  
   const relatedCases = useMemo(
     () => {
-      if (relatedCasesData.length > 0) return relatedCasesData;
+      // Use related cases from backend if available, otherwise fallback to looking up in cases array
+      if (relatedCasesData.length > 0) {
+        return relatedCasesData;
+      }
       return (meetingState.caseIds || []).map((cid) => cases.find((c) => c.id === cid)).filter(Boolean);
     },
     [meetingState.caseIds, cases, relatedCasesData]
@@ -2706,32 +2939,31 @@ function MeetingDetailView({
     const entries = Array.isArray(meetingState.memberEntries) ? meetingState.memberEntries : [];
 
     if (entries.length > 0) {
-      return entries.map((entry) => {
-        const rawName = (entry?.name || '').trim();
-        const enseignantId = Number(entry?.enseignantId);
+      // Filter out rapporteur - they are shown separately as reporter info
+      return entries
+        .filter((entry) => entry?.role !== 'rapporteur')
+        .map((entry) => {
+          const rawName = (entry?.name || '').trim();
+          const enseignantId = Number(entry?.enseignantId);
 
-        if (rawName && !/^unknown/i.test(rawName)) {
-          return rawName;
-        }
+          if (rawName && !/^unknown/i.test(rawName)) {
+            return rawName;
+          }
 
-        const fromStaff = Number.isInteger(enseignantId) && enseignantId > 0
-          ? (staffNameById.get(enseignantId) || '')
-          : '';
-        if (fromStaff) {
-          return fromStaff;
-        }
+          const fromStaff = Number.isInteger(enseignantId) && enseignantId > 0
+            ? (staffNameById.get(enseignantId) || '')
+            : '';
+          if (fromStaff) {
+            return fromStaff;
+          }
 
-        if (entry?.role === 'rapporteur') {
-          return reporterDisplayName;
-        }
-
-        return Number.isInteger(enseignantId) && enseignantId > 0 ? `Teacher #${enseignantId}` : 'Member';
-      });
+          return Number.isInteger(enseignantId) && enseignantId > 0 ? `Teacher #${enseignantId}` : 'Member';
+        });
     }
 
     return (Array.isArray(meetingState.participants) ? meetingState.participants : [])
       .map((name, index) => (String(name || '').trim() || `Member ${index + 1}`));
-  }, [meetingState.memberEntries, meetingState.participants, reporterDisplayName, staffNameById]);
+  }, [meetingState.memberEntries, meetingState.participants, staffNameById]);
 
   const selectedEditPresident = staffMembers.find((member) => Number(member.id) === Number(editForm.presidentId)) || null;
   const availableEditMemberChoicesCount = staffMembers.filter((member) => {
@@ -2805,28 +3037,19 @@ function MeetingDetailView({
     });
   };
 
-  // Prefer catalog rows so the president picks a real Decision id; the legacy
-  // free-text options remain as a fallback when the catalog has not been seeded.
-  const DECISION_OPTIONS = useMemo(() => {
-    if (Array.isArray(decisionChoices) && decisionChoices.length > 0) {
-      return [
+  const DECISION_OPTIONS = decisionChoices.length > 0
+    ? [{ value: '', label: 'Choose a decision...' },
+      ...decisionChoices.map((option) => ({
+        value: String(option.id),
+        label: option.nom_en || option.nom_ar || `Decision #${option.id}`,
+      }))]
+    : [
         { value: '', label: 'Choose a decision...' },
-        ...decisionChoices.map((option) => ({
-          value: String(option.id),
-          label: option.nom_en || option.nom_ar || `Decision #${option.id}`,
-        })),
+        { value: 'avertissement', label: 'Avertissement' },
+        { value: 'blame', label: 'Blame' },
+        { value: 'suspension', label: 'Suspension' },
+        { value: 'exclusion', label: 'Exclusion' },
       ];
-    }
-    return [
-      { value: '', label: 'Choose a decision...' },
-      { value: 'Oral Warning', label: 'Oral Warning' },
-      { value: 'Written Warning', label: 'Written Warning' },
-      { value: 'Reprimand', label: 'Reprimand' },
-      { value: 'Temporary Exclusion', label: 'Temporary Exclusion' },
-      { value: 'Permanent Exclusion', label: 'Permanent Exclusion' },
-      { value: 'Dismissed', label: 'Dismissed (No Action)' },
-    ];
-  }, [decisionChoices]);
 
   const handleUpdateMeeting = async () => {
     if (!canEditOrDeleteMeeting || editBusy || !meetingState.conseilId) return;
@@ -2949,9 +3172,6 @@ function MeetingDetailView({
           dateDecision: new Date().toISOString(),
         };
 
-        // Prefer a real catalog id so the backend can attach the existing
-        // Decision row directly. Otherwise fall back to the free-text
-        // resolver (createDecision-or-find) on the server.
         const selectedDecisionId = Number(d.decision);
         if (Number.isInteger(selectedDecisionId) && selectedDecisionId > 0) {
           draft.decisionId = selectedDecisionId;
@@ -3122,7 +3342,7 @@ function MeetingDetailView({
 
           <div className="mb-4 bg-surface-200/40 border border-edge-subtle rounded-md p-4">
             <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
-              {`Additional Members (up to ${MAX_ADDITIONAL_MEMBER_COUNT})`}
+              {`Additional Members (exactly ${MAX_ADDITIONAL_MEMBER_COUNT})`}
             </label>
             {availableEditMemberChoicesCount <= 2 && (
               <p className="mb-2 text-xs text-ink-muted">
@@ -3163,7 +3383,7 @@ function MeetingDetailView({
             <button
               onClick={handleUpdateMeeting}
               disabled={editBusy}
-              className="px-4 py-2.5 text-sm font-medium text-surface bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-4 py-2.5 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {icons.save({ className: 'w-4 h-4' })}
               {editBusy ? 'Saving changes...' : 'Save Meeting Changes'}
@@ -3174,8 +3394,19 @@ function MeetingDetailView({
 
       {/* Participants summary */}
       <div className="bg-surface rounded-lg border border-edge shadow-card p-5 flex flex-col sm:flex-row flex-wrap gap-6">
+        {/* Reporter (shown separately as info, not in member list) */}
+        {reporterDisplayName && (
+          <div>
+            <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Reporter</p>
+            <div className="flex items-center gap-2 text-xs text-ink-secondary">
+              <Avatar name={reporterDisplayName} size="w-6 h-6 text-[9px]" />
+              {reporterDisplayName}
+              <span className="text-brand/60 ml-1">(Rapporteur)</span>
+            </div>
+          </div>
+        )}
         <div>
-          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Participants</p>
+          <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Members</p>
           <div className="flex items-center gap-3 flex-wrap">
             {participantDisplayNames.map((p, index) => (
               <div key={`${p}-${index}`} className="flex items-center gap-2 text-xs text-ink-secondary">
@@ -3187,11 +3418,16 @@ function MeetingDetailView({
         </div>
         <div className="sm:border-l sm:border-edge sm:pl-6">
           <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Related Cases</p>
-          <div className="flex items-center gap-3 flex-wrap">
+          <div className="space-y-2">
             {relatedCases.map((c) => (
-              <div key={c.id} className="flex items-center gap-2 text-xs font-medium text-ink">
-                <Avatar name={c.studentName} size="w-6 h-6 text-[9px]" />
-                {c.studentName}
+              <div key={c.id} className="flex items-start gap-2">
+                <Avatar name={c.studentName} size="w-5 h-5 text-[8px]" />
+                <div className="text-xs">
+                  <p className="font-medium text-ink">{c.studentName}</p>
+                  {c.reporterName && (
+                    <p className="text-ink-secondary">by {c.reporterName}</p>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -3207,6 +3443,11 @@ function MeetingDetailView({
             <div className="min-w-0 flex-1">
               <p className="text-sm font-semibold text-ink">{c.studentName}</p>
               <p className="text-xs text-ink-muted">{c.studentId} · {c.department} · {c.violationType}</p>
+              {c.reporterName && (
+                <p className="text-xs text-ink-secondary mt-1">
+                  Reported by: {c.reporterName}
+                </p>
+              )}
             </div>
             <StatusBadge status={c.status} config={CASE_STATUS_CONFIG} />
           </div>
@@ -3219,33 +3460,35 @@ function MeetingDetailView({
             </p>
           </div>
 
-          {/* Decision panel: read-only after finalization, editable only for the president when in edit mode */}
+          {/* Decision form — editable only by president, view-only when finalized */}
           <div className="px-6 pb-6">
             {finalized && c.decision ? (
+              // Display finalized decision
               <div className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-ink-secondary mb-1">Decision</label>
-                    <div className="px-3 py-2.5 text-sm bg-success/5 border border-edge rounded-md text-ink">
+                    <div className="px-3 py-2.5 text-sm bg-success/5 border border-edge rounded-md text-ink rounded-md">
                       {c.decision.verdict || 'Decision Recorded'}
                     </div>
                   </div>
                   <div>
                     <label className="block text-sm font-medium text-ink-secondary mb-1">Status</label>
-                    <div className="px-3 py-2.5 text-sm bg-success/5 border border-edge rounded-md text-ink">
-                      {CASE_STATUS_CONFIG[c.status]?.label || c.status}
+                    <div className="px-3 py-2.5 text-sm bg-success/5 border border-edge rounded-md text-ink rounded-md">
+                      {c.status === 'closed' ? 'Closed' : c.status === 'hearing' ? 'Hearing' : c.status === 'pending' ? 'Pending' : c.status}
                     </div>
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-ink-secondary mb-1">Decision Details</label>
-                  <div className="px-3 py-2.5 text-sm bg-success/5 border border-edge rounded-md text-ink whitespace-pre-line">
+                  <div className="px-3 py-2.5 text-sm bg-success/5 border border-edge rounded-md text-ink">
                     {c.decision.details || 'No additional remarks'}
                   </div>
                 </div>
               </div>
             ) : (
-              <>
+              // Edit form for president
+              <div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                   <div>
                     <label className="block text-sm font-medium text-ink-secondary mb-1">Decision</label>
@@ -3283,7 +3526,7 @@ function MeetingDetailView({
                     className="w-full px-3 py-2.5 text-sm bg-control-bg border border-control-border rounded-md text-ink placeholder:text-ink-muted focus:ring-2 focus:ring-brand/30 focus:border-brand resize-none disabled:opacity-60 disabled:cursor-not-allowed"
                   />
                 </div>
-              </>
+              </div>
             )}
           </div>
         </div>
@@ -3302,13 +3545,13 @@ function MeetingDetailView({
         />
       </div>
 
-      {/* Finalize — president only, hidden in viewOnly mode */}
+      {/* Finalize — president only */}
       {!finalized && isPresident && !viewOnly && (
         <div className="flex justify-end">
           <button
             onClick={handleFinalize}
             disabled={finalizing}
-            className="px-6 py-2.5 text-sm font-medium text-surface bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm focus:ring-2 focus:ring-brand/30 focus:ring-offset-2"
+            className="px-6 py-2.5 text-sm font-medium text-white bg-brand rounded-md hover:bg-brand-hover active:bg-brand-dark transition-all duration-150 flex items-center gap-2 shadow-sm focus:ring-2 focus:ring-brand/30 focus:ring-offset-2"
           >
             {icons.check({ className: 'w-4 h-4' })}
             {finalizing ? 'Submitting decision...' : 'Validate Meeting &amp; Record Decision'}
@@ -3316,13 +3559,11 @@ function MeetingDetailView({
         </div>
       )}
 
-      {!finalized && (!isPresident || viewOnly) && (
+      {!finalized && !isPresident && (
         <div className="flex items-center gap-3 rounded-lg border border-edge-strong bg-surface-200/40 px-5 py-4">
           {icons.lock({ className: 'w-5 h-5 text-ink-muted' })}
           <span className="text-sm text-ink-secondary">
-            {viewOnly
-              ? 'You are viewing this meeting as a member — only the president can record the decision.'
-              : 'Only the council president can record the decision and validate the meeting.'}
+            Only the council president can record the decision and validate the meeting.
           </span>
         </div>
       )}

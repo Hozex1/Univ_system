@@ -81,14 +81,7 @@ function Section({ title, icon, children, action }) {
 
 /* ── Component ──────────────────────────────────────────────── */
 
-export default function CaseDetailPage({
-  caseData,
-  onBack,
-  canManageActions = true,
-  onCreateMeeting = null,
-  canDeleteCase = false,
-  onDeleteCase = null,
-}) {
+export default function CaseDetailPage({ caseData, onBack, canManageActions = true, onCreateMeeting = null, canDeleteCase = false, onDeleteCase = null }) {
   const navigate = useNavigate();
   const [showSanctionModal, setShowSanctionModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -97,6 +90,7 @@ export default function CaseDetailPage({
     timeline: Array.isArray(caseData?.timeline) ? caseData.timeline : [],
     evidence: Array.isArray(caseData?.evidence) ? caseData.evidence : [],
   };
+  const [hearingDate, setHearingDate] = useState(safeCaseData.hearingDate || '');
 
   const status = STATUS_CONFIG[safeCaseData.status] || STATUS_CONFIG.pending;
 
@@ -146,6 +140,7 @@ export default function CaseDetailPage({
               <button
                 type="button"
                 onClick={async () => {
+                  if (!window.confirm('Delete this case? This action cannot be undone.')) return;
                   setDeleting(true);
                   try {
                     await onDeleteCase(safeCaseData.id);
@@ -155,7 +150,7 @@ export default function CaseDetailPage({
                   }
                 }}
                 disabled={deleting}
-                className="px-4 py-2 text-sm font-medium text-danger bg-danger/5 border border-danger/30 rounded-md hover:bg-danger/10 transition-all duration-150 disabled:opacity-60"
+                className="px-4 py-2 text-sm font-medium text-white bg-danger rounded-md hover:bg-danger-hover active:bg-danger-dark transition-all duration-150"
               >
                 {deleting ? 'Deleting…' : 'Delete Case'}
               </button>
@@ -178,17 +173,9 @@ export default function CaseDetailPage({
             <div className="p-6 space-y-5">
               <div>
                 <p className="text-xs text-ink-muted">Report Reason</p>
-                <p className="text-sm text-ink-secondary leading-relaxed mt-1">
-                  {safeCaseData.description || 'No reason provided'}
-                </p>
+                <p className="text-sm text-ink-secondary leading-relaxed">{safeCaseData.descriptionSignal_ar || safeCaseData.descriptionSignal_en || safeCaseData.description || 'No reason provided'}</p>
               </div>
-              {safeCaseData.reporterName && (
-                <div>
-                  <p className="text-xs text-ink-muted">Reported by</p>
-                  <p className="text-sm font-medium text-ink mt-0.5">{safeCaseData.reporterName}</p>
-                </div>
-              )}
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <div>
                   <p className="text-xs text-ink-muted">Student</p>
                   <p className="text-sm font-medium text-ink mt-0.5">{safeCaseData.studentName}</p>
@@ -268,25 +255,12 @@ export default function CaseDetailPage({
 
                     {/* Details */}
                     <div className="bg-surface-200 rounded-lg p-4 border border-edge-subtle">
-                      <p className="text-sm text-ink leading-relaxed whitespace-pre-line">
-                        {safeCaseData.decision.details || 'No additional remarks'}
-                      </p>
+                      <p className="text-sm text-ink leading-relaxed">{safeCaseData.decision.details || 'No additional remarks'}</p>
                     </div>
-
-                    {safeCaseData.decision.issuedBy && (
-                      <div className="mt-4 pt-4 border-t border-edge-subtle flex items-center justify-between">
-                        <div>
-                          <p className="text-xs text-ink-muted">Issued by</p>
-                          <p className="text-sm font-medium text-ink mt-0.5">{safeCaseData.decision.issuedBy}</p>
-                        </div>
-                      </div>
-                    )}
                   </>
                 ) : (
                   <div className="p-4 bg-surface-200 rounded-lg border border-edge-subtle text-center">
-                    <p className="text-sm text-ink-muted">
-                      Case has been closed. Decision details will appear here once finalized.
-                    </p>
+                    <p className="text-sm text-ink-muted">Case has been closed. Decision details will appear here once finalized.</p>
                   </div>
                 )}
               </div>
@@ -370,6 +344,8 @@ export default function CaseDetailPage({
             </div>
           </div>
 
+          {/* ── Summons / Convocation ─────────────────────────── */}
+          {/* Summons section removed - no longer used */}
         </div>
       </div>
 
@@ -431,6 +407,7 @@ export default function CaseDetailPage({
         </>
       )}
 
+      {/* Summons modal removed */}
     </div>
   );
 }

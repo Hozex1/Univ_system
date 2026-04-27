@@ -213,6 +213,54 @@ export const updateConseil = (
   client: DbClient = prisma,
 ) => client.conseilDisciplinaire.update({ where: { id }, data });
 
+// Find conseils that should be "en_cours" based on date/time
+export const findConseilsNeedingStatusUpdate = async (
+  client: DbClient = prisma,
+) => {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  
+  // Get all "planifie" conseils where the meeting time has passed
+  const conseils = await client.conseilDisciplinaire.findMany({
+    where: {
+      status: "planifie",
+      dateReunion: {
+        lte: today, // Date is today or before
+      },
+    },
+    select: {
+      id: true,
+      dateReunion: true,
+      heure: true,
+    },
+  });
+
+  // Filter to only those where the time has passed (if time is set)
+  return conseils.filter((c) => {
+    if (!c.heure) {
+      // No specific time, if date is today or before, it should be in progress
+      return c.dateReunion <= today;
+    }
+    // Combine date and time for comparison
+    const meetingDateTime = new Date(c.dateReunion);
+    meetingDateTime.setHours(c.heure.getHours(), c.heure.getMinutes(), 0, 0);
+    return meetingDateTime <= now;
+  });
+};
+
+// Bulk update conseil statuses
+export const updateManyConseilsStatus = async (
+  ids: number[],
+  status: "planifie" | "en_cours" | "termine",
+  client: DbClient = prisma,
+) => {
+  if (ids.length === 0) return;
+  await client.conseilDisciplinaire.updateMany({
+    where: { id: { in: ids } },
+    data: { status },
+  });
+};
+
 export const deleteConseil = (id: number, client: DbClient = prisma) =>
   client.conseilDisciplinaire.delete({ where: { id } });
 

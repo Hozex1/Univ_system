@@ -155,6 +155,9 @@ export const deleteDossierService = async (id: number, caller: CallerContext) =>
 // ═══════════════════ CONSEIL SERVICES ═══════════════════════
 
 export const listConseils = async (caller: CallerContext, query: Record<string, any>) => {
+  // Auto-update status to "en_cours" for meetings where date/time has passed
+  await syncConseilStatuses();
+
   const { status, annee } = query;
   const where: any = {
     ...(!caller.isAdmin && caller.enseignantId ? { membres: { some: { enseignantId: caller.enseignantId } } } : {}),
@@ -163,6 +166,20 @@ export const listConseils = async (caller: CallerContext, query: Record<string, 
   };
   const conseils = await repo.findManyConseils(where);
   return conseils.map((c: any) => ({ ...c, dossiers: transformDossiers(c.dossiers) }));
+};
+
+// Auto-update status to "en_cours" for meetings where date/time has passed
+export const syncConseilStatuses = async () => {
+  try {
+    const conseilsToUpdate = await repo.findConseilsNeedingStatusUpdate();
+    if (conseilsToUpdate.length > 0) {
+      const ids = conseilsToUpdate.map((c) => c.id);
+      await repo.updateManyConseilsStatus(ids, "en_cours");
+      logger.info(`Updated ${ids.length} conseil(s) status to "en_cours"`);
+    }
+  } catch (error) {
+    logger.error("Failed to sync conseil statuses:", error);
+  }
 };
 
 export const getConseil = async (id: number, caller: CallerContext) => {
